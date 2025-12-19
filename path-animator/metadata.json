@@ -1,0 +1,5 @@
+{
+  "name": "Path Animator",
+  "description": "A premium tool to animate SVG paths with a draw-on effect. Parse, preview, and export production-ready animations.",
+  "requestFramePermissions": []
+}
