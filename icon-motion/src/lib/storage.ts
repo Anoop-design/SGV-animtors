@@ -96,7 +96,7 @@ export function createEmptyProject(name: string = 'Untitled'): Project {
         delay: 0.2,
         staggerMode: 'forward',
         staggerAmount: 0.3,
-        easing: 'ease-in-out',
+        easing: 'easeOut',
         customEasing: '0.4, 0, 0.2, 1',
         overrideColor: false,
         strokeColor: '#000000',
@@ -114,6 +114,8 @@ export function createEmptyProject(name: string = 'Untitled'): Project {
             final: { x: 0, y: 0, scale: 1, rotate: 0, opacity: 1 },
         },
         animationDirection: 'in',
+        springStiffness: 400,
+        springDamping: 15,
     };
 
     return {

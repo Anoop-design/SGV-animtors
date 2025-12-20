@@ -468,7 +468,7 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                                                 { label: 'Spring', value: 'spring' },
                                             ]}
                                             value={settings.easing}
-                                            onChange={(val) => updateSetting('easing', val)}
+                                            onChange={(val) => updateSetting('easing', val as import('@/types').EasingType)}
                                         />
                                     </div>
                                 </div>

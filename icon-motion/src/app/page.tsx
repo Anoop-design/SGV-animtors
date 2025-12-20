@@ -61,7 +61,7 @@ export default function IconMotionEditor() {
     delay: 0.2,
     staggerMode: 'forward',
     staggerAmount: 0.3,
-    easing: 'ease-in-out',
+    easing: 'easeOut',
     customEasing: '0.68, -0.55, 0.27, 1.55',
     overrideColor: false,
     strokeColor: '#D5D5D5',
@@ -75,7 +75,9 @@ export default function IconMotionEditor() {
     trigger: 'auto',
     transformPreset: null,
     globalTransform: DEFAULT_GLOBAL_TRANSFORM,
-    animationDirection: 'in'
+    animationDirection: 'in',
+    springStiffness: 400,
+    springDamping: 15,
   });
 
   // Debounced save function

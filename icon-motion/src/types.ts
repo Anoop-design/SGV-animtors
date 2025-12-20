@@ -218,7 +218,7 @@ export interface ParsedSVG {
 // Legacy stagger mode - maps to StaggerPattern
 export type StaggerMode = 'none' | 'forward' | 'reverse' | 'from-center' | 'random';
 
-export type EasingType = 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear' | 'custom';
+export type EasingType = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'spring' | 'custom';
 
 export type AnimationDirection = 'in' | 'out';
 
@@ -264,6 +264,10 @@ export interface AnimationSettings {
   // Global Transform (applies to all paths)
   globalTransform: GlobalTransform;
   animationDirection: AnimationDirection;
+
+  // Spring physics (when easing is 'spring')
+  springStiffness: number;
+  springDamping: number;
 }
 
 // -----------------------------------------------------------------------------
@@ -283,7 +287,7 @@ export const DEFAULT_PRESETS: AnimationPreset[] = [
       delay: 0.2,
       staggerMode: 'forward',
       staggerAmount: 0.3,
-      easing: 'ease-in-out',
+      easing: 'easeInOut',
     }
   },
   {
@@ -293,7 +297,7 @@ export const DEFAULT_PRESETS: AnimationPreset[] = [
       delay: 0,
       staggerMode: 'forward',
       staggerAmount: 0.1,
-      easing: 'ease-out',
+      easing: 'easeOut',
     }
   },
   {
@@ -303,7 +307,7 @@ export const DEFAULT_PRESETS: AnimationPreset[] = [
       delay: 0.5,
       staggerMode: 'forward',
       staggerAmount: 0.5,
-      easing: 'ease-in-out',
+      easing: 'easeInOut',
       fillMode: 'fade-in',
     }
   },
@@ -335,7 +339,7 @@ export const DEFAULT_PRESETS: AnimationPreset[] = [
       delay: 0,
       staggerMode: 'none',
       staggerAmount: 0,
-      easing: 'ease',
+      easing: 'easeOut',
     }
   }
 ];
