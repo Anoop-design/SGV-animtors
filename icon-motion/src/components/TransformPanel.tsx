@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
     AnimationSettings,
@@ -71,6 +71,7 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
     const [layersOpen, setLayersOpen] = useState(false);
     const [appearanceOpen, setAppearanceOpen] = useState(false);
     const [transitionEditorOpen, setTransitionEditorOpen] = useState(false);
+    const transitionButtonRef = useRef<HTMLButtonElement>(null);
 
     // Check if animation values are modified from defaults
     const isAnimationModified =
@@ -317,24 +318,35 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                             </div>
                         </div>
 
-                        {/* Transition Control - Button that opens editor */}
+                        {/* Transition Control - Button that opens dropdown */}
                         <div className="controls-field">
                             <span className="controls-field-label">Transition</span>
-                            <button
-                                className="transition-button"
-                                onClick={() => setTransitionEditorOpen(true)}
-                            >
-                                <span className="transition-button-label">
-                                    {recipe.transition?.type === 'spring' ? 'Spring' : 'Ease'}
-                                </span>
-                                <span className="transition-button-value">
-                                    {recipe.transition?.type === 'spring'
-                                        ? `${recipe.transition.stiffness}/${recipe.transition.damping}`
-                                        : `${recipe.transition?.duration || recipe.duration}s`
-                                    }
-                                </span>
-                                <ChevronDown size={14} />
-                            </button>
+                            <div style={{ position: 'relative', flex: 1 }}>
+                                <button
+                                    ref={transitionButtonRef}
+                                    className="transition-button"
+                                    onClick={() => setTransitionEditorOpen(!transitionEditorOpen)}
+                                >
+                                    <span className="transition-button-label">
+                                        {recipe.transition?.type === 'spring' ? 'Spring' : 'Ease'}
+                                    </span>
+                                    <span className="transition-button-value">
+                                        {recipe.transition?.type === 'spring'
+                                            ? `${recipe.transition.stiffness}/${recipe.transition.damping}`
+                                            : `${recipe.transition?.duration || recipe.duration}s`
+                                        }
+                                    </span>
+                                    <ChevronDown size={14} className={transitionEditorOpen ? 'rotate-180' : ''} style={{ transition: 'transform 0.2s' }} />
+                                </button>
+                                {/* TransitionEditor Dropdown - uses portal for fixed positioning */}
+                                <TransitionEditor
+                                    isOpen={transitionEditorOpen}
+                                    onClose={() => setTransitionEditorOpen(false)}
+                                    transition={recipe.transition || DEFAULT_RECIPE_TRANSITION}
+                                    onChange={(newTransition) => updateRecipe('transition', newTransition)}
+                                    anchorRef={transitionButtonRef}
+                                />
+                            </div>
                         </div>
 
                         {/* Stagger Slider */}
@@ -373,14 +385,7 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                     </div>
                 </motion.div>
             </div>
-
-            {/* TransitionEditor Modal */}
-            <TransitionEditor
-                isOpen={transitionEditorOpen}
-                onClose={() => setTransitionEditorOpen(false)}
-                transition={recipe.transition || DEFAULT_RECIPE_TRANSITION}
-                onChange={(newTransition) => updateRecipe('transition', newTransition)}
-            />
         </div>
     );
 };
+

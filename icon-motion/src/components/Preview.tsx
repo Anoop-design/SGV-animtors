@@ -285,14 +285,14 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
     setAnimateState(recipe.trigger === 'auto' ? 'play' : 'play');
   }, [parsedSVG.paths.length]);
 
-  // Re-trigger animation when recipe changes
+  // Re-trigger animation when recipe changes (including transition settings)
   // For auto: animate from idle to play
   // For hover/click: just update key, icon stays in play state
   useEffect(() => {
     setAnimationKey(Date.now());
     // Always animate once when settings change (so user can preview)
     setAnimateState('play');
-  }, [recipe.preset, recipe.duration, recipe.stagger, recipe.easing, recipe.intensity, recipe.trigger]);
+  }, [recipe.preset, recipe.duration, recipe.stagger, recipe.easing, recipe.intensity, recipe.trigger, recipe.transition]);
 
   // Replay handler - works for all triggers
   const handleReplay = () => {

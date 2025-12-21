@@ -1226,6 +1226,7 @@
     /* Full width button layout */
     display: flex;
     align-items: center;
+    width: 100%;
     justify-content: space-between;
     flex: 1;
     /* Padding inside button */
@@ -1269,51 +1270,38 @@
 }
 
 /* =============================================================================
-   TRANSITION EDITOR MODAL - Popup for editing transition settings
+   TRANSITION EDITOR DROPDOWN - Contextual menu for editing transition settings
+   Rendered via portal with fixed positioning (position set inline via JS)
    ============================================================================= */
 
-/* Backdrop overlay behind modal */
-.transition-editor-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 100;
-}
-
-/* Modal container */
-.transition-editor {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    /* Modal size */
+/* Dropdown container - position is applied inline via JS */
+.transition-editor-dropdown {
     width: 320px;
-    max-height: 80vh;
+    max-height: calc(100vh - 100px);
     overflow-y: auto;
-    /* Appearance */
+    /* Appearance - dark card style */
     background: var(--bg-card);
     border: 1px solid var(--border-default);
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-    z-index: 101;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    z-index: 1000;
 }
 
-/* Modal header */
+/* Header with back arrow, title, close */
 .transition-editor-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border-subtle);
 }
 
-.transition-editor-title {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary);
+.transition-editor-back {
+    opacity: 0;
 }
 
-/* Close button */
+
+
 .transition-editor-close {
     width: 28px;
     height: 28px;
@@ -1328,17 +1316,166 @@
     transition: all 0.15s ease;
 }
 
+.transition-editor-back:hover,
 .transition-editor-close:hover {
     background: var(--bg-input);
     color: var(--text-primary);
 }
 
-/* Modal content area */
-.transition-editor-content {
-    padding: 16px;
+.transition-editor-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Ease/Spring Toggle */
+.transition-editor-toggle {
+    padding: 12px 16px 8px;
+}
+
+/* Curve editor container */
+.transition-editor-curve {
+    padding: 0 16px 12px;
+}
+
+/* Controls section */
+.transition-editor-controls {
+    padding: 0 16px 12px;
     display: flex;
     flex-direction: column;
+    gap: 10px;
+}
+
+/* Row container for label + control */
+.transition-editor-row {
+    display: flex;
+    align-items: center;
     gap: 12px;
+}
+
+/* Label text */
+.transition-editor-label {
+    font-size: 13px;
+    width: 70px;
+    flex-shrink: 0;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* Input wrapper (grows to fill) */
+.transition-editor-input {
+    flex: 1;
+}
+
+/* Input row with NumberInput + Slider */
+.transition-editor-input-row {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Bezier text input */
+.transition-editor-bezier-input {
+    flex: 1;
+}
+
+.bezier-text-input {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-primary);
+    transition: all 0.15s ease;
+}
+
+.bezier-text-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+/* Preview toggle section */
+.transition-editor-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.transition-preview-bar {
+    flex: 1;
+    height: 36px;
+    /* Use accent color that works in both modes */
+    background: #3b82f6;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.transition-preview-indicator {
+    position: absolute;
+    /* Start at left side */
+    left: 4px;
+    top: 4px;
+    width: 28px;
+    height: 28px;
+    /* White indicator that works in both modes */
+    background: #ffffff;
+    border-radius: 6px;
+    /* Shadow for depth */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* =============================================================================
+   BEZIER CURVE EDITOR - Interactive cubic bezier curve with draggable handles
+   ============================================================================= */
+
+.bezier-curve-editor {
+    width: 100%;
+}
+
+.bezier-curve-svg {
+    display: block;
+    width: 100%;
+    border-radius: 8px;
+    background: var(--bg-input);
+}
+
+.bezier-control-point {
+    cursor: grab;
+    transition: r 0.1s ease;
+}
+
+.bezier-control-point:hover {
+    r: 10;
+}
+
+.bezier-control-point:active {
+    cursor: grabbing;
+}
+
+.bezier-endpoint {
+    pointer-events: none;
+}
+
+/* =============================================================================
+   SPRING CURVE PREVIEW - Spring response curve visualization
+   ============================================================================= */
+
+.spring-curve-preview {
+    width: 100%;
+}
+
+.spring-curve-svg {
+    display: block;
+    width: 100%;
+    border-radius: 8px;
+    background: var(--bg-input);
 }
 
 /* =============================================================================
@@ -1351,14 +1488,20 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    min-height: 26px;
+
+
 }
 
 /* Reset button - appears when values are customized */
 .section-reset-button {
     /* Small, subtle button */
-    padding: 4px 8px;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
     font-size: 10px;
     font-weight: 500;
+    width: fit-content;
     color: var(--text-secondary);
     background: var(--bg-input);
     border: 1px solid var(--border-default);
