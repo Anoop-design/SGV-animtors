@@ -1089,7 +1089,7 @@
     justify-content: space-between;
     width: 100%;
     padding: 0;
-    margin-bottom: 8px;
+    margin-bottom: 0;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -1100,13 +1100,121 @@
     opacity: 0.8;
 }
 
+/* =============================================================================
+   SECTION CHEVRON - Animated arrow for collapsible sections
+   ============================================================================= */
+
 .section-chevron {
+    /* Color of the chevron icon */
     color: var(--text-secondary);
+    /* Animation duration for rotation (200ms = 0.2 seconds) */
     transition: transform 200ms ease;
 }
 
+/* When section is open, rotate chevron 180 degrees (points up) */
 .section-chevron.open {
     transform: rotate(180deg);
+}
+
+/* =============================================================================
+   COLLAPSIBLE CONTENT - Wrapper for animated collapse/expand content
+   ============================================================================= */
+
+/* Base wrapper for collapsible content (animated with JS) */
+.collapsible-content {
+    /* Hide overflow when collapsed to prevent content from showing */
+    overflow: hidden;
+}
+
+/* Content container for Layers section when expanded */
+.collapsible-content-layers {
+    /* Vertical spacing between Layers header and content when expanded */
+    /* Adjust this value to change gap between header and layer items */
+    margin-top: 60px;
+    margin-bottom: 60px;
+}
+
+/* Content container for Appearance section when expanded */
+.collapsible-content-appearance {
+    /* Vertical spacing between Appearance header and content when expanded */
+    /* Adjust this value to change gap between header and controls */
+    margin-top: 12px;
+    /* Flexbox layout for vertical stacking */
+    display: flex;
+    flex-direction: column;
+    /* Gap between each control row (Override, Stroke color, Line cap, etc.) */
+    /* Increase for more spacing, decrease for tighter layout */
+    gap: 12px;
+}
+
+/* =============================================================================
+   PRESET GRID - 3x2 grid of animation preset buttons
+   ============================================================================= */
+
+/* Grid container for preset buttons */
+.preset-grid {
+    /* 3-column grid layout */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    /* Gap between preset buttons - adjust for tighter/looser grid */
+    gap: 8px;
+    /* Space between section title and grid */
+    margin-top: 8px;
+}
+
+/* Individual preset button */
+.preset-button {
+    /* Center icon and label vertically */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* Spacing between icon and label */
+    gap: 6px;
+    /* Internal padding - vertical | horizontal */
+    padding: 12px 8px;
+    /* Rounded corners - adjust for sharper/rounder look */
+    border-radius: 12px;
+    /* Border style */
+    border: 1px solid var(--border-default);
+    /* Default background when not selected */
+    background: var(--bg-card);
+    /* Cursor style */
+    cursor: pointer;
+    /* Smooth transitions for hover/selection states */
+    transition: all 0.2s ease;
+}
+
+/* Preset button when selected/active */
+.preset-button.selected {
+    /* Darker/highlighted background for selected state */
+    background: var(--bg-button);
+}
+
+/* Preset button hover state */
+.preset-button:hover:not(.selected) {
+    /* Subtle background change on hover */
+    background: var(--bg-input);
+}
+
+/* Preset icon container */
+.preset-icon {
+    /* Icon size is set inline (20px) */
+    color: var(--text-primary);
+}
+
+/* Preset label text */
+.preset-label {
+    /* Small text size for labels */
+    font-size: 11px;
+    /* Normal weight by default */
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Bold label when preset is selected */
+.preset-button.selected .preset-label {
+    font-weight: 600;
 }
 
 .layers-list {
@@ -1735,19 +1843,27 @@
 }
 
 .controls-section {
-    padding-bottom: 16px;
-    margin-bottom: 16px;
+    padding-bottom: 20px;
+    padding-top: 20px;
+  
     border-bottom: 1px solid var(--border-subtle);
     box-shadow: 0px 1px 0px 0px var(--shadow-white);
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0px;
 }
 
 .controls-section:last-child {
     border-bottom: 1px solid var(--border-subtle);
     box-shadow: 0px 1px 0px 0px var(--shadow-white);
     margin-bottom: 2px;
+}
+
+.controls-section:first-child {
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: 0px 1px 0px 0px var(--shadow-white);
+    margin-bottom: 2px;
+    padding-top: 0px;
 }
 
 .controls-section-title {

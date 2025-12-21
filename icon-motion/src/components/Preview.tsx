@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useMemo, useState, forwardRef, useImperativeHandle } from 'react';
-import { ParsedSVG, AnimationSettings, AnimationRecipe, PresetType, DEFAULT_RECIPE } from '@/types';
+import { ParsedSVG, AnimationSettings, AnimationRecipe, PresetType, DEFAULT_RECIPE, TriggerType } from '@/types';
 import { RotateCcw, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { motion, Variants, Easing } from 'framer-motion';
@@ -116,9 +116,9 @@ function getPathVariants(
           scale: 1,
           opacity: 1,
           transition: {
-            type: 'spring',
-            stiffness: 400,
-            damping: 10,
+            // Use tween for keyframe arrays (spring only supports 2 frames)
+            duration: recipe.duration * 0.6,
+            ease: 'easeInOut',
             delay,
           },
         },
@@ -183,6 +183,7 @@ interface PreviewProps {
   onHoverPath?: (index: number | null) => void;
   // AnimationRecipe - the current animation configuration
   recipe: AnimationRecipe;
+  updateRecipe: <K extends keyof AnimationRecipe>(key: K, value: AnimationRecipe[K]) => void;
 }
 
 export interface PreviewHandle {
@@ -214,7 +215,8 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
   selectedPathIndex,
   onSelectPath,
   onHoverPath,
-  recipe
+  recipe,
+  updateRecipe
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -342,7 +344,7 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
         <span className="preview-header-title">Preview</span>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Replay Button */}
+          {/* Replay Button - Icon only */}
           <button
             className="preview-replay-btn"
             onClick={handleReplay}
@@ -350,30 +352,28 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
-              padding: '6px 10px',
+              justifyContent: 'center',
+              padding: '6px',
               border: '1px solid var(--border-default)',
               borderRadius: '6px',
               background: 'var(--bg-button)',
               color: 'var(--text-primary)',
-              fontSize: '12px',
-              fontWeight: 500,
               cursor: 'pointer',
             }}
           >
             <RotateCcw size={14} />
-            <span>Replay</span>
           </button>
 
-          {/* Size Dropdown - shows actual pixel size */}
-          <div style={{ width: '90px' }}>
+          {/* Trigger Dropdown - moved from TransformPanel */}
+          <div style={{ width: '130px' }}>
             <Dropdown
-              value={String(selectedSize)}
-              onChange={(val) => setSelectedSize(parseInt(val, 10))}
-              options={ICON_SIZES.map(size => ({
-                value: String(size),
-                label: `${size}px`
-              }))}
+              value={recipe.trigger}
+              onChange={(val) => updateRecipe('trigger', val as TriggerType)}
+              options={[
+                { value: 'auto', label: 'Auto (on load)' },
+                { value: 'hover', label: 'On Hover' },
+                { value: 'click', label: 'On Click' },
+              ]}
             />
           </div>
 
@@ -535,8 +535,12 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                 ...styles,
                 width: `${selectedSize}px`,
                 height: `${selectedSize}px`,
-                overflow: 'visible' // Allow transforms to go outside
+                overflow: 'visible', // Allow transforms to go outside
+                cursor: recipe.trigger !== 'auto' ? 'pointer' : 'default',
               }}
+              // TRIGGER HANDLERS ON SVG LEVEL (whole viewbox)
+              onHoverStart={recipe.trigger === 'hover' ? handleReplay : undefined}
+              onClick={recipe.trigger === 'click' ? handleClickTrigger : undefined}
             >
               {parsedSVG.paths.map((path, index) => {
                 if (!path.visible) return null;
@@ -647,19 +651,13 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                         strokeLinejoin={settings.lineJoin}
                         pathLength={1}
                         variants={getPathVariants(recipe, index)}
-                        // TRIGGER-BASED ANIMATION:
-                        // Auto: start idle, animate to play
-                        // Hover/Click: start in play (visible), animate on interaction
-                        initial={recipe.trigger === 'auto' ? 'idle' : 'play'}
+                        // Always start from idle so replay works from beginning
+                        // The animateState controls whether we're at idle or play
+                        initial="idle"
                         animate={animateState}
-                        // For hover trigger: animate on hover
-                        whileHover={recipe.trigger === 'hover' ? 'hover' : undefined}
-                        // For click trigger: handle via onClick
-                        onClick={recipe.trigger === 'click' ? handleClickTrigger : undefined}
                         style={{
                           transformOrigin: 'center',
                           transformBox: 'fill-box',
-                          cursor: recipe.trigger !== 'auto' ? 'pointer' : 'default',
                         }}
                       />
                     </g>

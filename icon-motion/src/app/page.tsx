@@ -372,6 +372,7 @@ export default function IconMotionEditor() {
           onSelectPath={setSelectedPathIndex}
           onHoverPath={setHoveredPathIndex}
           recipe={recipe}
+          updateRecipe={updateRecipe}
         />
 
         {/* Right Panel - Transform Controls */}
