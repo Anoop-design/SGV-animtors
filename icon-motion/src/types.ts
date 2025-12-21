@@ -60,7 +60,41 @@ export const DEFAULT_STAGGER_CONFIG: StaggerConfig = {
 // Trigger Types
 // -----------------------------------------------------------------------------
 
-export type TriggerType = 'auto' | 'hover' | 'click' | 'viewport';
+export type TriggerType = 'auto' | 'hover' | 'click' | 'viewport' | 'manual';
+
+// -----------------------------------------------------------------------------
+// Stroke Animation State (for draw effects)
+// -----------------------------------------------------------------------------
+
+export interface StrokeAnimationState {
+  pathLength: number;    // 0 = invisible, 1 = fully drawn
+  pathOffset: number;    // Controls draw direction (0 to 1)
+}
+
+export const DEFAULT_STROKE_STATE: StrokeAnimationState = {
+  pathLength: 1,
+  pathOffset: 0,
+};
+
+// -----------------------------------------------------------------------------
+// Keyframe Animation (for wiggle/shake effects)
+// -----------------------------------------------------------------------------
+
+export interface KeyframeAnimation {
+  x?: number[];          // e.g., [-2, 2, -2, 2, 0]
+  y?: number[];          // e.g., [-1, 1, -1, 0]
+  rotate?: number[];     // e.g., [-5, 5, -5, 5, 0]
+  scale?: number[];      // e.g., [1, 1.1, 1]
+  opacity?: number[];    // e.g., [0, 1, 0]
+}
+
+// -----------------------------------------------------------------------------
+// Animation Type Discriminator
+// -----------------------------------------------------------------------------
+
+export type AnimationType = 'transform' | 'stroke' | 'keyframe';
+
+export type AnimationCategory = 'entrance' | 'attention' | 'exit';
 
 // -----------------------------------------------------------------------------
 // MotionNode - Core abstraction for animation definition
@@ -84,9 +118,37 @@ export const DEFAULT_MOTION_NODE: MotionNode = {
 };
 
 // -----------------------------------------------------------------------------
-// Transform Preset (Composable: motion + timing + stagger)
+// Animation Preset V2 (Unified: supports transform, stroke, and keyframe)
 // -----------------------------------------------------------------------------
 
+export interface AnimationPresetV2 {
+  id: string;
+  name: string;
+  description?: string;
+  category: AnimationCategory;
+  icon?: string;  // Icon name for UI
+  type: AnimationType;
+
+  // Transform mode (for transform type)
+  motion?: {
+    from: Partial<TransformState>;
+    to: Partial<TransformState>;
+  };
+
+  // Stroke mode (for stroke/draw type)
+  stroke?: {
+    from: Partial<StrokeAnimationState>;
+    to: Partial<StrokeAnimationState>;
+  };
+
+  // Keyframe mode (for keyframe type like wiggle)
+  keyframes?: KeyframeAnimation;
+
+  timing: TransitionConfig;
+  stagger: StaggerConfig;
+}
+
+// Legacy interface for backward compatibility
 export interface TransformPreset {
   id: string;
   name: string;
@@ -99,74 +161,43 @@ export interface TransformPreset {
   stagger: StaggerConfig;
 }
 
-export const TRANSFORM_PRESETS: TransformPreset[] = [
-  {
-    id: 'pop',
-    name: 'Pop',
-    description: 'Scale up with bounce',
-    motion: {
-      from: { scale: 0.9, opacity: 0 },
-      to: { scale: 1, opacity: 1 },
-    },
-    timing: { type: 'spring', stiffness: 400, damping: 15 },
-    stagger: { pattern: 'forward', amount: 0.1 },
-  },
-  {
-    id: 'reveal',
-    name: 'Reveal',
-    description: 'Fade in from below',
-    motion: {
-      from: { y: 6, opacity: 0 },
-      to: { y: 0, opacity: 1 },
-    },
-    timing: { duration: 0.4, ease: 'easeOut' },
-    stagger: { pattern: 'forward', amount: 0.15 },
-  },
-  {
-    id: 'bounce-in',
-    name: 'Bounce In',
-    description: 'Enter with spring physics',
-    motion: {
-      from: { scale: 0.8, opacity: 0 },
-      to: { scale: 1, opacity: 1 },
-    },
-    timing: { type: 'spring', stiffness: 300, damping: 8 },
-    stagger: { pattern: 'forward', amount: 0.15 },
-  },
-  {
-    id: 'slide-in',
-    name: 'Slide In',
-    description: 'Slide from left with fade',
-    motion: {
-      from: { x: -20, opacity: 0 },
-      to: { x: 0, opacity: 1 },
-    },
-    timing: { duration: 0.5, ease: 'easeOut' },
-    stagger: { pattern: 'forward', amount: 0.1 },
-  },
-  {
-    id: 'slide-up',
-    name: 'Slide Up',
-    description: 'Slide from bottom with fade',
-    motion: {
-      from: { y: 20, opacity: 0 },
-      to: { y: 0, opacity: 1 },
-    },
-    timing: { duration: 0.5, ease: 'easeOut' },
-    stagger: { pattern: 'forward', amount: 0.1 },
-  },
-  {
-    id: 'fade',
-    name: 'Fade',
-    description: 'Simple fade in',
-    motion: {
-      from: { opacity: 0 },
-      to: { opacity: 1 },
-    },
-    timing: { duration: 0.3, ease: 'easeInOut' },
-    stagger: { pattern: 'forward', amount: 0.05 },
-  },
+// -----------------------------------------------------------------------------
+// AnimationRecipe - New Recipe-based animation system
+// Separates Configuration (Recipe) from Implementation (Variants)
+// -----------------------------------------------------------------------------
+
+export type PresetType = 'none' | 'draw' | 'pop' | 'wiggle' | 'bounce' | 'draw-pop';
+
+export interface AnimationRecipe {
+  preset: PresetType;
+  duration: number;      // Animation duration in seconds
+  easing: EasingType;    // Easing function
+  intensity: number;     // Multiplier for effect strength (0.5-2, default: 1)
+  stagger: number;       // Delay between each path animating (seconds)
+  loop: boolean;         // Whether animation repeats
+  trigger: TriggerType;  // When animation triggers
+}
+
+export const DEFAULT_RECIPE: AnimationRecipe = {
+  preset: 'draw',
+  duration: 0.6,
+  easing: 'easeOut',
+  intensity: 1,
+  stagger: 0.15,
+  loop: false,
+  trigger: 'auto',
+};
+
+// Preset metadata for UI display - 3x2 grid order
+export const PRESET_OPTIONS: { value: PresetType; label: string; description: string; icon: string }[] = [
+  { value: 'none', label: 'None', description: 'No animation', icon: 'ban' },
+  { value: 'draw', label: 'Draw', description: 'Stroke draws on progressively', icon: 'pencil' },
+  { value: 'pop', label: 'Pop', description: 'Scale up with fade', icon: 'zap' },
+  { value: 'wiggle', label: 'Wiggle', description: 'Shake left and right', icon: 'activity' },
+  { value: 'bounce', label: 'Bounce', description: 'Spring up with bounce', icon: 'arrow-up-down' },
+  { value: 'draw-pop', label: 'Draw+Pop', description: 'Draw then pop in', icon: 'sparkles' },
 ];
+
 
 // -----------------------------------------------------------------------------
 // Path Transform (legacy - for per-path customization)

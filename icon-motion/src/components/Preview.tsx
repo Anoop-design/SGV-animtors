@@ -1,12 +1,139 @@
 'use client';
 
 import React, { useEffect, useRef, useMemo, useState, forwardRef, useImperativeHandle } from 'react';
-import { ParsedSVG, AnimationSettings } from '@/types';
-import { Play, Pause, RotateCcw, ChevronDown, Repeat, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
-import { formatTimecode } from '@/lib/utils';
+import { ParsedSVG, AnimationSettings, AnimationRecipe, PresetType, DEFAULT_RECIPE } from '@/types';
+import { RotateCcw, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import { Dropdown } from '@/components/ui/Dropdown';
-import { motion } from 'framer-motion';
+import { motion, Variants, Easing } from 'framer-motion';
 import '@/styles.css';
+
+// Available icon sizes for the size dropdown
+const ICON_SIZES = [16, 24, 32, 48, 64, 96];
+
+// -----------------------------------------------------------------------------
+// getPathVariants - Generates Framer Motion variants based on recipe preset
+// Per new-presets.md architecture: Draw (pathLength), Pop (scale), Wiggle (rotate)
+// -----------------------------------------------------------------------------
+
+function getPathVariants(
+  recipe: AnimationRecipe,
+  pathIndex: number
+): Variants {
+  const delay = pathIndex * recipe.stagger;
+
+  // Common transition for most presets
+  const baseTransition = {
+    duration: recipe.duration,
+    ease: recipe.easing as Easing,
+    delay,
+  };
+
+  switch (recipe.preset) {
+    case 'draw':
+      // Draw: stroke draws on progressively
+      return {
+        idle: {
+          pathLength: 0,
+          opacity: 1,  // Keep opacity visible
+        },
+        play: {
+          pathLength: 1,
+          opacity: 1,
+          transition: {
+            pathLength: { duration: recipe.duration, ease: 'linear', delay },
+          },
+        },
+      };
+
+    case 'pop':
+      // Pop: scale from 0 to 1 with opacity
+      return {
+        idle: {
+          scale: 0,
+          opacity: 0
+        },
+        play: {
+          scale: 1,
+          opacity: 1,
+          transition: baseTransition,
+        },
+      };
+
+    case 'wiggle':
+      // Wiggle: shake back and forth (icon should be visible in idle)
+      const angle = 10 * recipe.intensity;
+      return {
+        idle: {
+          rotate: 0,
+          opacity: 1,  // Always visible
+        },
+        play: {
+          rotate: [0, -angle, angle, -angle, 0],
+          opacity: 1,
+          transition: baseTransition,
+        },
+      };
+
+    case 'bounce':
+      // Bounce: spring up from below
+      return {
+        idle: {
+          scale: 0.8,
+          y: 10,
+          opacity: 0
+        },
+        play: {
+          scale: 1,
+          y: 0,
+          opacity: 1,
+          transition: {
+            type: 'spring',
+            stiffness: 300,
+            damping: 10,
+            delay,
+          },
+        },
+      };
+
+    case 'draw-pop':
+      // Draw+Pop: draw first, then scale/pop
+      return {
+        idle: {
+          pathLength: 0,
+          scale: 0.8,
+          opacity: 0,
+        },
+        play: {
+          pathLength: 1,
+          scale: 1,
+          opacity: 1,
+          transition: {
+            pathLength: { duration: recipe.duration * 0.6, ease: 'linear', delay },
+            scale: { duration: recipe.duration * 0.4, ease: 'easeOut', delay: delay + recipe.duration * 0.5 },
+            opacity: { duration: 0.2, delay },
+          },
+        },
+      };
+
+    case 'none':
+      // None: no animation, just visible
+      return {
+        idle: { opacity: 1 },
+        play: { opacity: 1 },
+      };
+
+    default:
+      // Default: just visible
+      return {
+        idle: { opacity: 1 },
+        play: { opacity: 1 }
+      };
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Preview Props & Component
+// -----------------------------------------------------------------------------
 
 interface PreviewProps {
   parsedSVG: ParsedSVG;
@@ -17,8 +144,8 @@ interface PreviewProps {
   selectedPathIndex?: number | null;
   onSelectPath?: (index: number | null) => void;
   onHoverPath?: (index: number | null) => void;
-  // Animation mode: which animation type to play
-  animationMode: 'stroke' | 'transform';
+  // AnimationRecipe - the current animation configuration
+  recipe: AnimationRecipe;
 }
 
 export interface PreviewHandle {
@@ -50,18 +177,16 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
   selectedPathIndex,
   onSelectPath,
   onHoverPath,
-  animationMode
+  recipe
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const requestRef = useRef<number>();
 
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [showSpeedDropdown, setShowSpeedDropdown] = useState(false);
+  // Simplified state - no timeline tracking
+  const [animationKey, setAnimationKey] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(true); // For click trigger
 
-  // Available speed options
-  const speedOptions = [0.25, 0.5, 1, 2];
+  // New: Selected size for the size strip (larger default)
+  const [selectedSize, setSelectedSize] = useState(96);
 
   // Background state
   const [bgType, setBgType] = useState<BackgroundType>('dotted');
@@ -73,18 +198,6 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
   const zoomIn = () => setZoom(prev => Math.min(prev + 0.25, 2));
   const zoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.5));
   const zoomReset = () => setZoom(1);
-
-  // Close dropdowns on click outside
-  useEffect(() => {
-    if (!showSpeedDropdown) return;
-    const handleClick = () => setShowSpeedDropdown(false);
-    // Slight delay to prevent immediate closing
-    const timer = setTimeout(() => document.addEventListener('click', handleClick), 0);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener('click', handleClick);
-    }
-  }, [showSpeedDropdown]);
 
   // Measure paths when SVG structure changes
   // IMPORTANT: Only measure paths with .animating-path class to avoid counting
@@ -102,123 +215,41 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
     });
   }, [parsedSVG.paths.length, parsedSVG.paths.map(p => p.d).join('')]);
 
-  // Calculate Total Duration based on max delay + duration
-  const totalDuration = useMemo(() => {
-    if (parsedSVG.paths.length === 0) return 0;
-
-    let maxEndTime = 0;
-
-    parsedSVG.paths.forEach((path, index) => {
-      if (!path.visible) return;
-
-      let delay = settings.delay;
-      if (settings.staggerMode === 'forward') {
-        delay += index * (settings.staggerAmount || 0);
-      } else if (settings.staggerMode === 'reverse') {
-        delay += (parsedSVG.paths.length - 1 - index) * (settings.staggerAmount || 0);
-      }
-
-      let duration = settings.duration;
-      if (settings.fillMode === 'fade-in') {
-        duration = duration * 1.8;
-      }
-
-      const endTime = delay + duration;
-      if (endTime > maxEndTime) maxEndTime = endTime;
-    });
-
-    return maxEndTime > 0 ? maxEndTime : settings.duration;
-  }, [parsedSVG, settings]);
-
-  // Reset when SVG changes
+  // Reset animation when SVG changes
   useEffect(() => {
-    setCurrentTime(0);
-    setIsPlaying(true);
+    setAnimationKey(prev => prev + 1);
+    setIsAnimating(true);
   }, [parsedSVG.paths.length]);
 
-  // Animation Loop
+  // Re-trigger animation when ANY recipe property changes (always animate once on change)
   useEffect(() => {
-    if (isPlaying) {
-      let lastTime = performance.now();
+    setAnimationKey(prev => prev + 1);
+    setIsAnimating(true);
+  }, [recipe.preset, recipe.duration, recipe.stagger, recipe.easing, recipe.intensity]);
 
-      const animate = (time: number) => {
-        const dt = (time - lastTime) / 1000;
-        lastTime = time;
-
-        setCurrentTime(prev => {
-          let next = prev + dt * playbackSpeed;
-          if (next >= totalDuration) {
-            if (settings.loop) {
-              return 0; // Loop immediately
-            } else {
-              setIsPlaying(false);
-              return totalDuration;
-            }
-          }
-          return next;
-        });
-
-        requestRef.current = requestAnimationFrame(animate);
-      };
-
-      requestRef.current = requestAnimationFrame(animate);
-    }
-    return () => {
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
-    };
-  }, [isPlaying, totalDuration, settings.loop, playbackSpeed]);
-
-  // Sync Current Time to CSS Variable
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.style.setProperty('--current-time', `${currentTime}s`);
-    }
-  }, [currentTime]);
-
+  // Simple replay handler
   const handleReplay = () => {
-    setCurrentTime(0);
-    setIsPlaying(true);
+    setAnimationKey(prev => prev + 1);
+    setIsAnimating(true);
   };
 
-  const togglePlay = () => {
-    if (currentTime >= totalDuration && !isPlaying) {
-      setCurrentTime(0);
+  // Handle click trigger
+  const handleClickTrigger = () => {
+    if (recipe.trigger === 'click') {
+      setIsAnimating(false);
+      // Small delay to reset, then re-animate
+      setTimeout(() => {
+        setAnimationKey(prev => prev + 1);
+        setIsAnimating(true);
+      }, 50);
     }
-    setIsPlaying(!isPlaying);
   };
 
   // Expose methods via ref for keyboard shortcuts
   useImperativeHandle(ref, () => ({
-    togglePlay,
+    togglePlay: handleReplay, // Map to replay since no play/pause
     handleReplay,
   }));
-
-  // Keyboard shortcuts for speed control
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === '[') {
-        e.preventDefault();
-        setPlaybackSpeed(prev => {
-          const idx = speedOptions.indexOf(prev);
-          return idx > 0 ? speedOptions[idx - 1] : prev;
-        });
-      } else if (e.key === ']') {
-        e.preventDefault();
-        setPlaybackSpeed(prev => {
-          const idx = speedOptions.indexOf(prev);
-          return idx < speedOptions.length - 1 ? speedOptions[idx + 1] : prev;
-        });
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const handleScrub = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setIsPlaying(false);
-    setCurrentTime(parseFloat(e.target.value));
-  };
 
   // Generate dynamic styles for the preview
   const styles = useMemo(() => {
@@ -268,6 +299,41 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
         <span className="preview-header-title">Preview</span>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Replay Button */}
+          <button
+            className="preview-replay-btn"
+            onClick={handleReplay}
+            title="Replay Animation (R)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '6px 10px',
+              border: '1px solid var(--border-default)',
+              borderRadius: '6px',
+              background: 'var(--bg-button)',
+              color: 'var(--text-primary)',
+              fontSize: '12px',
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            <RotateCcw size={14} />
+            <span>Replay</span>
+          </button>
+
+          {/* Size Dropdown - shows actual pixel size */}
+          <div style={{ width: '90px' }}>
+            <Dropdown
+              value={String(selectedSize)}
+              onChange={(val) => setSelectedSize(parseInt(val, 10))}
+              options={ICON_SIZES.map(size => ({
+                value: String(size),
+                label: `${size}px`
+              }))}
+            />
+          </div>
+
           {/* Background Dropdown */}
           <div style={{ width: '140px' }}>
             <Dropdown
@@ -424,8 +490,8 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
               className="preview-svg"
               style={{
                 ...styles,
-                width: '100%',
-                height: '100%',
+                width: `${selectedSize}px`,
+                height: `${selectedSize}px`,
                 overflow: 'visible' // Allow transforms to go outside
               }}
             >
@@ -519,70 +585,15 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                         '--fo': finalState.opacity,
                         // @ts-ignore
                         '--path-delay': `${delay}s`,
-                        // Animation properties - only apply when in transform mode AND has transforms
-                        animationName: (animationMode === 'transform' && hasTransform) ? 'transformPath' : 'none',
-                        animationDuration: 'var(--duration)',
-                        animationDelay: 'calc(var(--path-delay) - var(--current-time))',
-                        animationPlayState: 'paused',
-                        animationFillMode: 'both',
-                        animationTimingFunction: 'var(--ease)',
+                        // Animation properties removed - now using Framer Motion variants
+                        // Legacy CSS animation code removed
                         transformOrigin: 'center',
                         transformBox: 'fill-box'
                       } as React.CSSProperties}
                     >
-                      {/* Hover/Selection Highlight - Solid indigo stroke that traces the actual path */}
-                      {(isHovered || isSelected) && (
-                        <motion.path
-                          d={path.d}
-                          transform={path.transform || undefined}
-                          fill="none"
-                          stroke="#6366f1" // Indigo highlight color
-                          strokeWidth={Number(strokeWidth) + (isSelected ? 1.5 : 1)} // Thin outline
-                          strokeLinecap={settings.lineCap}
-                          strokeLinejoin={settings.lineJoin}
-                          initial={{ opacity: 0, pathLength: 0 }}
-                          animate={{
-                            opacity: isSelected ? 1 : 0.7,
-                            pathLength: 1
-                          }}
-                          transition={{
-                            opacity: { duration: 0.1 },
-                            pathLength: { duration: 0.2, ease: 'easeOut' }
-                          }}
-                          style={{
-                            pointerEvents: 'none',
-                          }}
-                        />
-                      )}
-
-                      {/* Ghost Preview - Shows transformed end state when editing */}
-                      {isSelected && hasTransform && (
-                        <motion.path
-                          d={path.d}
-                          transform={path.transform || undefined}
-                          fill="none"
-                          stroke="#6366f1" // Indigo color for ghost
-                          strokeWidth={strokeWidth}
-                          strokeLinecap={settings.lineCap}
-                          strokeLinejoin={settings.lineJoin}
-                          strokeDasharray="4 4" // Dashed to distinguish from real path
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 0.4 }}
-                          transition={{ duration: 0.2 }}
-                          style={{
-                            pointerEvents: 'none',
-                            // Apply the effective transform to show end state
-                            // For 'in' direction, ghost shows starting position (targetState)
-                            // For 'out' direction, ghost shows ending position (targetState)
-                            transform: `translate(${effectiveTransform.x}px, ${effectiveTransform.y}px) scale(${effectiveTransform.scale}) rotate(${effectiveTransform.rotate}deg)`,
-                            transformOrigin: 'center',
-                            transformBox: 'fill-box'
-                          }}
-                        />
-                      )}
-
-                      {/* Actual Visible Path - Has .animating-path class for measurement */}
+                      {/* Animated Path - simplified without hover/selection overlays */}
                       <motion.path
+                        key={`${path.id}-${animationKey}`}
                         className="animating-path"
                         d={path.d}
                         transform={path.transform || undefined}
@@ -591,46 +602,13 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                         strokeWidth={strokeWidth}
                         strokeLinecap={settings.lineCap}
                         strokeLinejoin={settings.lineJoin}
-                        strokeDasharray={animationMode === 'stroke' ? len : 0}
-                        strokeDashoffset={animationMode === 'stroke' ? len : 0}
+                        pathLength={1}
+                        variants={getPathVariants(recipe, index)}
+                        initial="idle"
+                        animate="play"
                         style={{
-                          // Standard CSS Styles for Loop Animation
-                          opacity: hasFade ? 0 : 1,
-                          // @ts-ignore
-                          '--path-delay': `${delay}s`,
-                          // @ts-ignore
-                          '--fade-delay': `${fadeDelay}s`,
-                          animationPlayState: 'paused',
-                          animationDelay: `
-                              calc(var(--path-delay) - var(--current-time)),
-                              ${hasFade ? 'calc(var(--fade-delay) - var(--current-time))' : '0s'}
-                          `,
-                          // Only apply stroke-draw animation when in stroke mode
-                          animationName: animationMode === 'stroke' ? `draw${hasFade ? ', fadeIn' : ''}` : 'none',
-                          animationDuration: `var(--duration)${hasFade ? ', var(--duration)' : ''}`,
-                          animationTimingFunction: `var(--ease)${hasFade ? ', ease' : ''}`,
-                          animationFillMode: 'both',
-                          pointerEvents: 'none' // Events handled by Hit Area
-                        }}
-                      />
-
-                      {/* Invisible Hit Area (Always Present, Handles Events) */}
-                      <motion.path
-                        d={path.d}
-                        transform={path.transform || undefined}
-                        fill="transparent" // Transparent fill to catch clicks inside shapes
-                        stroke="transparent"
-                        strokeWidth={Number(strokeWidth) + 8} // Precise hit area, close to actual path
-                        strokeLinecap={settings.lineCap}
-                        strokeLinejoin={settings.lineJoin}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (onSelectPath) onSelectPath(index);
-                        }}
-                        onMouseEnter={() => onHoverPath && onHoverPath(index)}
-                        onMouseLeave={() => onHoverPath && onHoverPath(null)}
-                        style={{
-                          cursor: 'pointer',
+                          transformOrigin: 'center',
+                          transformBox: 'fill-box',
                         }}
                       />
                     </g>
@@ -639,85 +617,6 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
               })}
             </motion.svg>
           </motion.div>
-        </div>
-      </div>
-
-      {/* Timeline Controls - Clean Design */}
-      <div className="timeline-container">
-        {/* Progress Bar */}
-        <div className="timeline-progress-bar">
-          {/* Track Background */}
-          <div className="timeline-progress-track" />
-          {/* Filled Progress */}
-          <div
-            className="timeline-progress-fill"
-            style={{
-              width: totalDuration > 0
-                ? `calc(${(currentTime / totalDuration) * 100}% + ${7 - (currentTime / totalDuration) * 14}px)`
-                : '0%'
-            }}
-          />
-          {/* Range Input for Interaction */}
-          <input
-            type="range"
-            min={0}
-            max={totalDuration}
-            step={0.01}
-            value={currentTime}
-            onChange={handleScrub}
-            className="timeline-progress-input"
-          />
-        </div>
-
-        {/* Play Button + Timecode + Speed + Loop */}
-        <div className="timeline-controls-row">
-          <button className="timeline-play-btn" onClick={togglePlay}>
-            {isPlaying ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: 2 }} />}
-          </button>
-
-          <span className="timeline-timecode">
-            {formatTimecode(currentTime)} / {formatTimecode(totalDuration)}
-          </span>
-
-          <div className="timeline-controls-right">
-            {/* Speed Selector - Custom Dropdown */}
-            <div className="timeline-speed-container">
-              <button
-                className="timeline-speed-trigger"
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent immediate close
-                  setShowSpeedDropdown(!showSpeedDropdown);
-                }}
-              >
-                {playbackSpeed}X <ChevronDown size={14} />
-              </button>
-              {showSpeedDropdown && (
-                <div className="speed-dropdown-menu">
-                  {speedOptions.map(speed => (
-                    <button
-                      key={speed}
-                      className={`speed-option ${playbackSpeed === speed ? 'active' : ''}`}
-                      onClick={() => {
-                        setPlaybackSpeed(speed);
-                        setShowSpeedDropdown(false);
-                      }}
-                    >
-                      {speed}X
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Loop Button */}
-            <button
-              className={`timeline-loop-btn ${settings.loop ? 'active' : ''}`}
-              onClick={() => updateSetting('loop', !settings.loop)}
-              title={settings.loop ? "Disable Loop" : "Enable Loop"}
-            >
-              <Repeat size={16} />
-            </button>
-          </div>
         </div>
       </div>
 

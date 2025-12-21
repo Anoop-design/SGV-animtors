@@ -31,7 +31,11 @@
     --text-secondary: #70707b;
     --text-muted: #a0a0ab;
     --text-inverse: #ffffff;
+    --text-on-accent: #ffffff;
     --text-warning: #ef4444;
+
+    /* Accent colors */
+    --accent-primary: #4F4F69;
 
     /* Slider/toggle colors */
     --slider-track: #d4d4d8;
@@ -778,15 +782,96 @@
     background-size: 20px 20px;
 }
 
-/* SVG container */
+/* SVG container - size controlled by selectedSize state */
 .preview-svg {
-    max-width: 100%;
-    max-height: 100%;
+    /* Size is set inline via selectedSize state */
+    display: block;
+}
+
+/* =============================================================================
+   SIZE STRIP - Icon size preview selector
+   ============================================================================= */
+
+.size-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background-color: var(--bg-input);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.size-strip-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.size-strip-items {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    flex: 1;
+    padding: 4px 0;
+}
+
+/* Hide scrollbar but allow scrolling */
+.size-strip-items::-webkit-scrollbar {
+    display: none;
+}
+
+.size-strip-items {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.size-strip-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px;
+    min-width: 48px;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.size-strip-item:hover {
+    background-color: var(--bg-button-hover);
+}
+
+.size-strip-item--selected {
+    background-color: var(--bg-accent);
+    border-color: var(--border-input-focus);
+}
+
+.size-strip-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+}
+
+.size-strip-size {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.size-strip-item--selected .size-strip-size {
+    color: var(--text-primary);
+    font-weight: 500;
 }
 
 /* =============================================================================
    TIMELINE / PLAYBACK CONTROLS - Clean Minimal Design
    ============================================================================= */
+
 
 .timeline-container {
     padding: 16px 20px;
@@ -2837,4 +2922,194 @@
 
 .empty-state-message p {
     margin: 0;
+}
+
+/* =============================================================================
+   EXPORT MODAL - Export code modal dialog
+   ============================================================================= */
+
+.export-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+}
+
+.export-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 700px;
+    max-height: 85vh;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.export-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-default);
+}
+
+.export-modal-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.export-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.export-modal-close:hover {
+    background-color: var(--bg-button-hover);
+    color: var(--text-primary);
+}
+
+/* Format Selector */
+.export-format-selector {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-default);
+}
+
+.export-format-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background-color: var(--bg-input);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+}
+
+.export-format-option:hover {
+    background-color: var(--bg-button-hover);
+}
+
+.export-format-option.selected {
+    background-color: var(--bg-accent);
+    border-color: var(--border-input-focus);
+}
+
+.export-format-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background-color: var(--bg-button);
+    border-radius: 8px;
+    color: var(--text-primary);
+}
+
+.export-format-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.export-format-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.export-format-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* Code Container */
+.export-code-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.export-code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background-color: var(--bg-input);
+    border-bottom: 1px solid var(--border-default);
+}
+
+.export-code-filename {
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-secondary);
+}
+
+.export-code-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.export-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    background-color: var(--bg-button);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.export-action-btn:hover {
+    background-color: var(--bg-button-hover);
+}
+
+.export-code-content {
+    flex: 1;
+    margin: 0;
+    padding: 16px 20px;
+    overflow: auto;
+    background-color: var(--bg-main);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    line-height: 1.6;
+    color: var(--text-primary);
+    white-space: pre;
+    tab-size: 2;
+}
+
+.export-code-content code {
+    font-family: inherit;
 }

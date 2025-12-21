@@ -7,7 +7,7 @@ import { AddSVGPanel } from '@/components/AddSVGPanel';
 import { TransformPanel } from '@/components/TransformPanel';
 import { HelpModal } from '@/components/HelpModal';
 import { ToastContainer, useToast } from '@/components/Toast';
-import { AnimationSettings, DEFAULT_ICON, ParsedSVG, DEFAULT_PATH_TRANSFORM, DEFAULT_GLOBAL_TRANSFORM, PathTransform } from '@/types';
+import { AnimationSettings, DEFAULT_ICON, ParsedSVG, DEFAULT_PATH_TRANSFORM, DEFAULT_GLOBAL_TRANSFORM, PathTransform, AnimationRecipe, DEFAULT_RECIPE, PresetType } from '@/types';
 import { parseSVG } from '@/lib/svg-utils';
 import { generateExport, downloadSVG, ExportType } from '@/lib/generate-export';
 import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
@@ -55,6 +55,17 @@ export default function IconMotionEditor() {
 
   const { toasts, addToast, removeToast } = useToast();
   const previewRef = useRef<{ togglePlay: () => void; handleReplay: () => void } | null>(null);
+
+  // Animation Recipe state - single source of truth for animation config
+  const [recipe, setRecipe] = useState<AnimationRecipe>(DEFAULT_RECIPE);
+
+  // Direct recipe update function - avoids broken sync with settings
+  const updateRecipe = useCallback(<K extends keyof AnimationRecipe>(
+    key: K,
+    value: AnimationRecipe[K]
+  ) => {
+    setRecipe(prev => ({ ...prev, [key]: value }));
+  }, []);
 
   const [settings, setSettings] = useState<AnimationSettings>({
     duration: 2,
@@ -135,6 +146,8 @@ export default function IconMotionEditor() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // NOTE: Removed broken sync useEffect - recipe is now updated directly via updateRecipe
 
   // Parse SVG when input changes and autosave
   useEffect(() => {
@@ -243,6 +256,7 @@ export default function IconMotionEditor() {
       'css': 'CSS',
       'react': 'React component',
       'framer-motion': 'Framer Motion code',
+      'framer-motion-pro': 'React component (Pro)',
       'gsap': 'GSAP code',
       'vue': 'Vue component'
     };
@@ -357,13 +371,15 @@ export default function IconMotionEditor() {
           selectedPathIndex={selectedPathIndex}
           onSelectPath={setSelectedPathIndex}
           onHoverPath={setHoveredPathIndex}
-          animationMode="transform"
+          recipe={recipe}
         />
 
         {/* Right Panel - Transform Controls */}
         <TransformPanel
           settings={settings}
           updateSetting={updateSetting}
+          recipe={recipe}
+          updateRecipe={updateRecipe}
           paths={parsedSVG.paths}
           onToggleVisibility={togglePathVisibility}
           onReorderPath={reorderPaths}

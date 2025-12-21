@@ -836,6 +836,99 @@ describe('Animation Presets', () => {
 
 ---
 
-*Document Version: 1.0*  
+## 13. TransformPanel UI Specification
+
+Based on `new-presets.md` architecture, the panel should display controls based on the selected preset.
+### Panel Structure
+
+```
+┌──────────────────────────────────────┐
+│ ✕  Customise                         │
+├──────────────────────────────────────┤
+│ Preset: [Draw ▼]                     │  ← Dropdown selector
+├──────────────────────────────────────┤
+│                                      │
+│ ▸ TIMING                             │  ← Collapsible section
+│   Duration: [====○====] 0.6s         │
+│   Easing:   [easeOut ▼]              │
+│   Stagger:  [====○====] 0.15s        │
+│                                      │
+│ ▸ PRESET OPTIONS                     │  ← Dynamic based on preset
+│   (controls specific to preset)      │
+│                                      │
+│ ▸ LAYERS                             │  ← Collapsible section
+│   ┌──────────────────────────────┐   │
+│   │ ≡ Path 1              👁️    │   │
+│   │ ≡ Path 2 [Modified]   👁️    │   │
+│   │ ≡ Path 3              👁️    │   │
+│   └──────────────────────────────┘   │
+│                                      │
+│ ▸ TRIGGER                            │
+│   Trigger: [Auto ▼]                  │
+│   Loop:    [Yes] [No]                │
+│                                      │
+└──────────────────────────────────────┘
+```
+
+### Preset-Specific Controls
+
+#### Draw Preset
+| Control | Type | Range | Default |
+|---------|------|-------|---------|
+| Draw Speed | Slider | 0.2 - 2s | 0.6s |
+| Draw Direction | Dropdown | Forward / Reverse | Forward |
+
+#### Pop Preset
+| Control | Type | Range | Default |
+|---------|------|-------|---------|
+| Bounciness | Slider | 100 - 600 | 400 |
+| Start Scale | Slider | 0 - 0.9 | 0 |
+
+#### Bounce Preset
+| Control | Type | Range | Default |
+|---------|------|-------|---------|
+| Distance | Slider | 5 - 50px | 20px |
+| Bounce Amount | Slider | 0 - 1 | 0.4 |
+
+#### Wiggle Preset
+| Control | Type | Range | Default |
+|---------|------|-------|---------|
+| Intensity | Slider | 0.5 - 2 | 1 |
+| Speed | Slider | 0.2 - 1s | 0.5s |
+
+### Global Controls (All Presets)
+
+| Control | Type | Description |
+|---------|------|-------------|
+| Duration | Slider (0.1-5s) | Animation duration |
+| Easing | Dropdown | linear, ease, easeIn, easeOut, easeInOut |
+| Stagger | Slider (0-1s) | Delay between each path |
+| Stagger Pattern | Dropdown | Forward, Reverse, From Center, Random |
+| Trigger | Dropdown | Auto, Hover, Click |
+| Loop | Toggle | Repeat animation |
+
+### Per-Path Editing (Layer Selected)
+
+When a layer is clicked:
+```
+┌──────────────────────────────────────┐
+│ ← Back                               │
+│ Editing: Path 2                      │
+├──────────────────────────────────────┤
+│ Override Global: [Yes] [No]          │
+│                                      │
+│ Duration: [====○====] 0.8s           │
+│ Delay:    [====○====] 0.2s           │
+│ Easing:   [easeOut ▼]                │
+│                                      │
+│ [Reset to Global]                    │
+└──────────────────────────────────────┘
+```
+
+---
+
+*Document Version: 1.1*  
 *Created: December 20, 2024*  
+*Updated: December 20, 2024 - Added TransformPanel UI Spec*  
 *Status: Ready for Implementation*
+

@@ -7,20 +7,27 @@ import {
     ParsedPath,
     StaggerMode,
     TriggerType,
-    TRANSFORM_PRESETS,
+    PRESET_OPTIONS,
+    PresetType,
     PathTransform,
-    DEFAULT_PATH_TRANSFORM
+    DEFAULT_PATH_TRANSFORM,
+    AnimationRecipe,
+    EasingType
 } from '@/types';
 import { Slider } from '@/components/ui/Slider';
 import { NumberInput } from '@/components/ui/NumberInput';
 import { Dropdown } from '@/components/ui/Dropdown';
-import { GripVertical, Eye, EyeOff, X, ChevronDown, ChevronLeft } from 'lucide-react';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { GripVertical, Eye, EyeOff, X, ChevronDown, ChevronLeft, Ban, Pencil, Zap, Activity, ArrowUpDown, Sparkles } from 'lucide-react';
 import { isInputFocused } from '@/lib/useKeyboardShortcuts';
 import '@/styles.css';
 
 interface TransformPanelProps {
     settings: AnimationSettings;
     updateSetting: <K extends keyof AnimationSettings>(key: K, value: AnimationSettings[K]) => void;
+    // Recipe props - single source of truth for animation config
+    recipe: AnimationRecipe;
+    updateRecipe: <K extends keyof AnimationRecipe>(key: K, value: AnimationRecipe[K]) => void;
     paths: ParsedPath[];
     onToggleVisibility: (index: number) => void;
     onReorderPath: (fromIndex: number, toIndex: number) => void;
@@ -41,6 +48,8 @@ interface TransformPanelProps {
 export const TransformPanel: React.FC<TransformPanelProps> = ({
     settings,
     updateSetting,
+    recipe,
+    updateRecipe,
     paths,
     onToggleVisibility,
     onReorderPath,
@@ -61,28 +70,9 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
     const activePath = selectedPathIndex !== null && selectedPathIndex !== undefined ? paths[selectedPathIndex] : null;
     const animation: PathTransform = activePath?.animation || DEFAULT_PATH_TRANSFORM;
 
-    // Apply transform preset
+    // Apply animation preset - updates recipe directly
     const applyPreset = (presetId: string) => {
-        const preset = TRANSFORM_PRESETS.find(p => p.id === presetId);
-        if (!preset) return;
-
-        // Apply to all visible paths
-        paths.forEach((path, index) => {
-            if (path.visible && updatePathAnimation) {
-                updatePathAnimation(index, {
-                    initial: { ...DEFAULT_PATH_TRANSFORM.initial, ...preset.motion.from },
-                    final: { ...DEFAULT_PATH_TRANSFORM.final, ...preset.motion.to },
-                    originX: 0.5,
-                    originY: 0.5,
-                    transition: preset.timing,
-                });
-            }
-        });
-
-        // Update global stagger
-        updateSetting('staggerMode', preset.stagger.pattern as StaggerMode);
-        updateSetting('staggerAmount', preset.stagger.amount);
-        updateSetting('transformPreset', presetId);
+        updateRecipe('preset', presetId as PresetType);
     };
 
     return (
@@ -401,26 +391,129 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                                 </AnimatePresence>
                             </div>
 
-                            {/* Preset Section */}
+                            {/* Preset Section - 3x2 Grid */}
                             <div className="controls-section">
-                                <span className="controls-section-title">Preset</span>
-                                <div className="controls-field">
-                                    <Dropdown
-                                        options={[
-                                            { label: 'None', value: '' },
-                                            ...TRANSFORM_PRESETS.map(p => ({ label: p.name, value: p.id }))
-                                        ]}
-                                        value={settings.transformPreset || ''}
-                                        onChange={(val) => {
-                                            if (val) applyPreset(val);
-                                            else updateSetting('transformPreset', null);
-                                        }}
-                                        placeholder="Select a preset..."
-                                    />
+                                <span className="controls-section-title">Entrance Preset</span>
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(3, 1fr)',
+                                    gap: '8px',
+                                    marginTop: '8px',
+                                }}>
+                                    {PRESET_OPTIONS.map((preset) => {
+                                        const isSelected = recipe.preset === preset.value;
+                                        const IconComponent = {
+                                            'ban': Ban,
+                                            'pencil': Pencil,
+                                            'zap': Zap,
+                                            'activity': Activity,
+                                            'arrow-up-down': ArrowUpDown,
+                                            'sparkles': Sparkles,
+                                        }[preset.icon] || Ban;
+
+                                        return (
+                                            <motion.button
+                                                key={preset.value}
+                                                onClick={() => applyPreset(preset.value)}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '6px',
+                                                    padding: '12px 8px',
+                                                    borderRadius: '12px',
+                                                    border: '1px solid var(--border-default)',
+                                                    background: isSelected ? 'var(--bg-button)' : 'var(--bg-card)',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease',
+                                                }}
+                                            >
+                                                <motion.div
+                                                    initial={false}
+                                                    whileHover={
+                                                        preset.value === 'wiggle' ? { rotate: [0, -10, 10, -10, 0], transition: { duration: 0.5 } } :
+                                                            preset.value === 'pop' ? { scale: [1, 1.3, 1], transition: { duration: 0.3 } } :
+                                                                preset.value === 'bounce' ? { y: [0, -8, 0], transition: { type: 'spring', stiffness: 400 } } :
+                                                                    preset.value === 'draw' ? { opacity: [0.3, 1], transition: { duration: 0.4 } } :
+                                                                        preset.value === 'draw-pop' ? { scale: [0.8, 1.2, 1], opacity: [0, 1], transition: { duration: 0.4 } } :
+                                                                            {}
+                                                    }
+                                                >
+                                                    <IconComponent
+                                                        size={20}
+                                                        color="var(--text-primary)"
+                                                    />
+                                                </motion.div>
+                                                <span style={{
+                                                    fontSize: '11px',
+                                                    fontWeight: isSelected ? 600 : 500,
+                                                    color: 'var(--text-primary)',
+                                                }}>
+                                                    {preset.label}
+                                                </span>
+                                            </motion.button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
-                            {/* Timing Section */}
+                            {/* Appearance Section */}
+                            <div className="controls-section">
+                                <span className="controls-section-title">Appearance</span>
+
+                                {/* Override Toggle */}
+                                <div className="controls-field">
+                                    <span className="controls-field-label">Override</span>
+                                    <SegmentedControl
+                                        options={[{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }]}
+                                        value={settings.overrideColor ? 'yes' : 'no'}
+                                        onChange={(v) => updateSetting('overrideColor', v === 'yes')}
+                                        className="controls-toggle-wide"
+                                    />
+                                </div>
+
+                                {/* Stroke Color */}
+                                {settings.overrideColor && (
+                                    <div className="controls-field">
+                                        <span className="controls-field-label">Stroke color</span>
+                                        <div className="controls-color-input-inline">
+                                            <input type="color" className="controls-color-picker-inline" value={settings.strokeColor} onChange={(e) => updateSetting('strokeColor', e.target.value)} />
+                                            <input type="text" className="controls-color-text-inline" value={settings.strokeColor.toUpperCase()} onChange={(e) => updateSetting('strokeColor', e.target.value)} />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Stroke Width */}
+                                {settings.overrideColor && (
+                                    <div className="controls-field">
+                                        <span className="controls-field-label">Stroke width</span>
+                                        <div className="controls-field-input-group">
+                                            <input type="text" className="controls-field-input controls-field-input-short" value={settings.strokeWidth} onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) updateSetting('strokeWidth', val); }} />
+                                            <Slider min={0.5} max={10} step={0.5} value={settings.strokeWidth} onChange={(val) => updateSetting('strokeWidth', val)} />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Line Cap */}
+                                <div className="controls-field">
+                                    <span className="controls-field-label">Line cap</span>
+                                    <div style={{ flex: 1 }}>
+                                        <Dropdown options={[{ label: 'Round', value: 'round' }, { label: 'Butt', value: 'butt' }, { label: 'Square', value: 'square' }]} value={settings.lineCap} onChange={(val) => updateSetting('lineCap', val as any)} />
+                                    </div>
+                                </div>
+
+                                {/* Line Join */}
+                                <div className="controls-field">
+                                    <span className="controls-field-label">Line join</span>
+                                    <div style={{ flex: 1 }}>
+                                        <Dropdown options={[{ label: 'Round', value: 'round' }, { label: 'Bevel', value: 'bevel' }, { label: 'Miter', value: 'miter' }]} value={settings.lineJoin} onChange={(val) => updateSetting('lineJoin', val as any)} />
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="controls-section">
                                 <span className="controls-section-title">Timing</span>
 
@@ -428,14 +521,14 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                                     <span className="controls-field-label">Duration</span>
                                     <div className="controls-field-input-group">
                                         <NumberInput
-                                            value={settings.duration}
-                                            onChange={(val) => updateSetting('duration', val)}
+                                            value={recipe.duration}
+                                            onChange={(val) => updateRecipe('duration', val)}
                                             min={0.1} max={5} step={0.1} unit="s"
                                         />
                                         <Slider
                                             min={0.1} max={3} step={0.1}
-                                            value={settings.duration}
-                                            onChange={(val) => updateSetting('duration', val)}
+                                            value={recipe.duration}
+                                            onChange={(val) => updateRecipe('duration', val)}
                                         />
                                     </div>
                                 </div>
@@ -467,14 +560,14 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                                                 { label: 'Linear', value: 'linear' },
                                                 { label: 'Spring', value: 'spring' },
                                             ]}
-                                            value={settings.easing}
-                                            onChange={(val) => updateSetting('easing', val as import('@/types').EasingType)}
+                                            value={recipe.easing}
+                                            onChange={(val) => updateRecipe('easing', val as EasingType)}
                                         />
                                     </div>
                                 </div>
 
                                 {/* Spring params - only show when spring easing selected */}
-                                {settings.easing === 'spring' && (
+                                {recipe.easing === 'spring' && (
                                     <>
                                         <div className="controls-field">
                                             <span className="controls-field-label">Stiffness</span>
@@ -518,14 +611,14 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                                     <span className="controls-field-label">Amount</span>
                                     <div className="controls-field-input-group">
                                         <NumberInput
-                                            value={settings.staggerAmount}
-                                            onChange={(val) => updateSetting('staggerAmount', val)}
+                                            value={recipe.stagger}
+                                            onChange={(val) => updateRecipe('stagger', val)}
                                             min={0} max={1} step={0.05} unit="s"
                                         />
                                         <Slider
                                             min={0} max={0.5} step={0.05}
-                                            value={settings.staggerAmount}
-                                            onChange={(val) => updateSetting('staggerAmount', val)}
+                                            value={recipe.stagger}
+                                            onChange={(val) => updateRecipe('stagger', val)}
                                         />
                                     </div>
                                 </div>
@@ -557,8 +650,8 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                                             { label: 'On Hover', value: 'hover' },
                                             { label: 'On Click', value: 'click' },
                                         ]}
-                                        value={settings.trigger}
-                                        onChange={(val) => updateSetting('trigger', val as TriggerType)}
+                                        value={recipe.trigger}
+                                        onChange={(val) => updateRecipe('trigger', val as TriggerType)}
                                     />
                                 </div>
                             </div>

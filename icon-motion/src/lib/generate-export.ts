@@ -1,6 +1,6 @@
 import { ParsedSVG, AnimationSettings } from '@/types';
 
-export type ExportType = 'svg' | 'react' | 'css' | 'framer-motion' | 'gsap' | 'vue';
+export type ExportType = 'svg' | 'react' | 'css' | 'framer-motion' | 'framer-motion-pro' | 'gsap' | 'vue';
 
 interface ExportData {
   visiblePaths: Array<any>;
@@ -31,7 +31,7 @@ function generateExportData(parsedSVG: ParsedSVG, settings: AnimationSettings): 
 
   const getDelay = (originalIndex: number) => {
     let delay = settings.delay;
-    if (settings.staggerMode === 'sequential') {
+    if (settings.staggerMode === 'forward') {
       delay += originalIndex * (settings.staggerAmount || 0);
     } else if (settings.staggerMode === 'reverse') {
       delay += (parsedSVG.paths.length - 1 - originalIndex) * (settings.staggerAmount || 0);
@@ -126,7 +126,7 @@ export default AnimatedIcon;`;
   }
 
   if (type === 'framer-motion') {
-    const isInteractive = settings.interactionTrigger && settings.interactionTrigger !== 'none';
+    const isInteractive = settings.trigger && settings.trigger !== 'auto';
 
     // Variants generation
     const paths = visiblePaths.map((path) => {
@@ -180,8 +180,8 @@ export default AnimatedIcon;`;
     const wrapperProps = isInteractive ? `
       initial="initial"
       animate="animate"
-      whileHover="${settings.interactionTrigger === 'hover' ? 'active' : undefined}"
-      whileTap="${settings.interactionTrigger === 'click' ? 'active' : undefined}"` : '';
+      whileHover="${settings.trigger === 'hover' ? 'active' : undefined}"
+      whileTap="${settings.trigger === 'click' ? 'active' : undefined}"` : '';
 
     return `import { motion } from 'framer-motion';
 
@@ -285,4 +285,204 @@ export function downloadSVG(content: string, filename: string = 'animated-icon.s
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Generate production-ready React component with TypeScript
+ * Includes: configurable props, imperative ref, trigger support
+ */
+export function generateProExport(
+  parsedSVG: ParsedSVG,
+  settings: AnimationSettings,
+  componentName: string = 'AnimatedIcon'
+): string {
+  const { visiblePaths, getPathAttrs, getDelay } = generateExportData(parsedSVG, settings);
+
+  // Generate path elements
+  const pathElements = visiblePaths.map((path, index) => {
+    const attrs = getPathAttrs(path);
+    const delay = getDelay(path.originalIndex);
+
+    return `        <motion.path
+          key="${index}"
+          d="${attrs.d}"
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={isAnimating ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+          transition={{
+            pathLength: { duration: duration / 1000, delay: ${delay} * speedMultiplier, ease: "easeOut" },
+            opacity: { duration: 0.15, delay: ${delay} * speedMultiplier }
+          }}
+        />`;
+  }).join('\n');
+
+  return `"use client";
+
+import React, { forwardRef, useImperativeHandle, useState, useCallback, useEffect } from "react";
+import { motion, useAnimation, AnimationControls } from "framer-motion";
+
+// =============================================================================
+// TYPE DEFINITIONS
+// =============================================================================
+
+export type TriggerType = "auto" | "hover" | "click" | "manual";
+
+export interface ${componentName}Props {
+  /** Width and height of the icon in pixels */
+  size?: number;
+  /** Icon color (stroke and fill) */
+  color?: string;
+  /** Stroke width */
+  strokeWidth?: number;
+  /** Animation trigger type */
+  trigger?: TriggerType;
+  /** Animation duration in milliseconds */
+  duration?: number;
+  /** Delay before animation starts in milliseconds */
+  delay?: number;
+  /** Whether to loop the animation */
+  loop?: boolean;
+  /** Additional CSS class name */
+  className?: string;
+}
+
+export interface ${componentName}Ref {
+  /** Start the animation */
+  animate: () => void;
+  /** Reset to initial state */
+  reset: () => void;
+  /** Pause the animation */
+  pause: () => void;
+  /** Resume a paused animation */
+  resume: () => void;
+}
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+export const ${componentName} = forwardRef<${componentName}Ref, ${componentName}Props>(
+  (
+    {
+      size = 24,
+      color = "currentColor",
+      strokeWidth = 2,
+      trigger = "${settings.trigger || 'auto'}",
+      duration = ${Math.round(settings.duration * 1000)},
+      delay = 0,
+      loop = ${settings.loop},
+      className,
+    },
+    ref
+  ) => {
+    const [isAnimating, setIsAnimating] = useState(trigger === "auto");
+    const speedMultiplier = duration / ${Math.round(settings.duration * 1000)};
+    
+    const fill = "none";
+    const stroke = color;
+
+    // Expose imperative methods
+    useImperativeHandle(ref, () => ({
+      animate: () => setIsAnimating(true),
+      reset: () => setIsAnimating(false),
+      pause: () => {/* Framer Motion doesn't support pause natively */},
+      resume: () => {/* Framer Motion doesn't support resume natively */},
+    }));
+
+    // Handle auto trigger
+    useEffect(() => {
+      if (trigger === "auto") {
+        const timer = setTimeout(() => setIsAnimating(true), delay);
+        return () => clearTimeout(timer);
+      }
+    }, [trigger, delay]);
+
+    // Handle loop
+    useEffect(() => {
+      if (loop && isAnimating) {
+        const totalDuration = duration + ${Math.round((settings.staggerAmount || 0) * 1000 * visiblePaths.length)};
+        const timer = setTimeout(() => {
+          setIsAnimating(false);
+          setTimeout(() => setIsAnimating(true), 100);
+        }, totalDuration);
+        return () => clearTimeout(timer);
+      }
+    }, [loop, isAnimating, duration]);
+
+    // Event handlers
+    const handleHover = () => {
+      if (trigger === "hover" && !isAnimating) {
+        setIsAnimating(true);
+      }
+    };
+
+    const handleHoverEnd = () => {
+      if (trigger === "hover") {
+        setIsAnimating(false);
+      }
+    };
+
+    const handleClick = () => {
+      if (trigger === "click") {
+        setIsAnimating(!isAnimating);
+      }
+    };
+
+    return (
+      <motion.svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="${parsedSVG.viewBox}"
+        width={size}
+        height={size}
+        fill="none"
+        className={className}
+        onMouseEnter={handleHover}
+        onMouseLeave={handleHoverEnd}
+        onClick={handleClick}
+        style={{ cursor: trigger !== "auto" && trigger !== "manual" ? "pointer" : "default" }}
+      >
+${pathElements}
+      </motion.svg>
+    );
+  }
+);
+
+${componentName}.displayName = "${componentName}";
+
+export default ${componentName};
+
+// =============================================================================
+// USAGE EXAMPLE
+// =============================================================================
+/*
+import { ${componentName}, type ${componentName}Ref } from "./${componentName}";
+import { useRef } from "react";
+
+function App() {
+  const iconRef = useRef<${componentName}Ref>(null);
+
+  return (
+    <>
+      {/* Auto-animate on load *}
+      <${componentName} size={32} color="#6366f1" trigger="auto" />
+
+      {/* Animate on hover *}
+      <${componentName} size={24} trigger="hover" />
+
+      {/* Animate on click *}
+      <${componentName} size={48} trigger="click" loop />
+
+      {/* Manual control via ref *}
+      <${componentName} ref={iconRef} trigger="manual" />
+      <button onClick={() => iconRef.current?.animate()}>Play</button>
+      <button onClick={() => iconRef.current?.reset()}>Reset</button>
+    </>
+  );
+}
+*/
+`;
 }

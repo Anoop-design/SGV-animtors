@@ -9,7 +9,6 @@ import {
     StaggerMode,
     TriggerType,
     DEFAULT_PRESETS,
-    TRANSFORM_PRESETS,
     GlobalTransform,
     AnimationDirection,
     PathTransform,
@@ -485,7 +484,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                 fontSize: '15px',
                                                 color: 'var(--text-primary)'
                                             }}>
-                                                Path {selectedPathIndex + 1}
+                                                Path {(selectedPathIndex ?? 0) + 1}
                                             </div>
                                         </div>
 
@@ -497,7 +496,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                 <div className="controls-field-input-group">
                                                     <NumberInput
                                                         value={animation.transition?.duration ?? settings.duration}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             transition: { ...animation.transition, duration: val }
                                                         })}
@@ -507,7 +506,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                     <Slider
                                                         min={0.1} max={5} step={0.1}
                                                         value={animation.transition?.duration ?? settings.duration}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             transition: { ...animation.transition, duration: val }
                                                         })}
@@ -519,7 +518,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                 <div className="controls-field-input-group">
                                                     <NumberInput
                                                         value={animation.transition?.delay ?? 0}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             transition: { ...animation.transition, delay: val }
                                                         })}
@@ -529,7 +528,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                     <Slider
                                                         min={0} max={3} step={0.1}
                                                         value={animation.transition?.delay ?? 0}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             transition: { ...animation.transition, delay: val }
                                                         })}
@@ -547,8 +546,8 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                             { label: 'Ease Out', value: 'ease-out' },
                                                             { label: 'Ease In-Out', value: 'ease-in-out' },
                                                         ]}
-                                                        value={animation.transition?.ease ?? settings.easing}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        value={String(animation.transition?.ease ?? settings.easing)}
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             transition: { ...animation.transition, ease: val }
                                                         })}
@@ -583,7 +582,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                                     <NumberInput
                                                         value={animation.initial.scale}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             initial: { ...animation.initial, scale: val }
                                                         })}
@@ -592,7 +591,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                     <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>→</span>
                                                     <NumberInput
                                                         value={animation.final.scale}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             final: { ...animation.final, scale: val }
                                                         })}
@@ -607,7 +606,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                                     <NumberInput
                                                         value={animation.initial.rotate}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             initial: { ...animation.initial, rotate: val }
                                                         })}
@@ -617,7 +616,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                     <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>→</span>
                                                     <NumberInput
                                                         value={animation.final.rotate}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             final: { ...animation.final, rotate: val }
                                                         })}
@@ -633,7 +632,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                                     <NumberInput
                                                         value={animation.initial.x}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             initial: { ...animation.initial, x: val }
                                                         })}
@@ -643,7 +642,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                     <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>→</span>
                                                     <NumberInput
                                                         value={animation.final.x}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             final: { ...animation.final, x: val }
                                                         })}
@@ -659,7 +658,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                                     <NumberInput
                                                         value={animation.initial.y}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             initial: { ...animation.initial, y: val }
                                                         })}
@@ -669,7 +668,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                     <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>→</span>
                                                     <NumberInput
                                                         value={animation.final.y}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             final: { ...animation.final, y: val }
                                                         })}
@@ -685,7 +684,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                                     <NumberInput
                                                         value={animation.initial.opacity}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             initial: { ...animation.initial, opacity: val }
                                                         })}
@@ -694,7 +693,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                     <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>→</span>
                                                     <NumberInput
                                                         value={animation.final.opacity}
-                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                        onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                             ...animation,
                                                             final: { ...animation.final, opacity: val }
                                                         })}
@@ -729,7 +728,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                                                 <NumberInput
                                                                     value={animation.initial.scaleX ?? 1}
-                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                                         ...animation,
                                                                         initial: { ...animation.initial, scaleX: val }
                                                                     })}
@@ -738,7 +737,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                                 <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>→</span>
                                                                 <NumberInput
                                                                     value={animation.final.scaleX ?? 1}
-                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                                         ...animation,
                                                                         final: { ...animation.final, scaleX: val }
                                                                     })}
@@ -753,7 +752,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                                                 <NumberInput
                                                                     value={animation.initial.scaleY ?? 1}
-                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                                         ...animation,
                                                                         initial: { ...animation.initial, scaleY: val }
                                                                     })}
@@ -762,7 +761,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                                 <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>→</span>
                                                                 <NumberInput
                                                                     value={animation.final.scaleY ?? 1}
-                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                                         ...animation,
                                                                         final: { ...animation.final, scaleY: val }
                                                                     })}
@@ -777,7 +776,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                                                 <NumberInput
                                                                     value={animation.initial.skewX ?? 0}
-                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                                         ...animation,
                                                                         initial: { ...animation.initial, skewX: val }
                                                                     })}
@@ -787,7 +786,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                                 <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>→</span>
                                                                 <NumberInput
                                                                     value={animation.final.skewX ?? 0}
-                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                                         ...animation,
                                                                         final: { ...animation.final, skewX: val }
                                                                     })}
@@ -803,7 +802,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                                                                 <NumberInput
                                                                     value={animation.initial.skewY ?? 0}
-                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                                         ...animation,
                                                                         initial: { ...animation.initial, skewY: val }
                                                                     })}
@@ -813,7 +812,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                                 <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>→</span>
                                                                 <NumberInput
                                                                     value={animation.final.skewY ?? 0}
-                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                                    onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                                         ...animation,
                                                                         final: { ...animation.final, skewY: val }
                                                                     })}
@@ -833,7 +832,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                                     { label: 'Right', value: '1' },
                                                                 ]}
                                                                 value={String(animation.originX)}
-                                                                onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                                onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                                     ...animation,
                                                                     originX: parseFloat(val)
                                                                 })}
@@ -850,7 +849,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                                                     { label: 'Bottom', value: '1' },
                                                                 ]}
                                                                 value={String(animation.originY)}
-                                                                onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex, {
+                                                                onChange={(val) => updatePathAnimation && updatePathAnimation(selectedPathIndex!, {
                                                                     ...animation,
                                                                     originY: parseFloat(val)
                                                                 })}
@@ -864,7 +863,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                         {/* Reset Button */}
                                         {activePath.animation && (
                                             <button
-                                                onClick={() => updatePathAnimation && updatePathAnimation(selectedPathIndex, undefined)}
+                                                onClick={() => updatePathAnimation && updatePathAnimation(selectedPathIndex!, undefined)}
                                                 style={{
                                                     width: '100%',
                                                     background: 'var(--bg-input)',
