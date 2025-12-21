@@ -13,6 +13,7 @@ const ICON_SIZES = [16, 24, 32, 48, 64, 96];
 // -----------------------------------------------------------------------------
 // getPathVariants - Generates Framer Motion variants based on recipe preset
 // Per new-presets.md architecture: Draw (pathLength), Pop (scale), Wiggle (rotate)
+// Now includes 'hover' variant for hover trigger animations
 // -----------------------------------------------------------------------------
 
 function getPathVariants(
@@ -34,13 +35,20 @@ function getPathVariants(
       return {
         idle: {
           pathLength: 0,
-          opacity: 1,  // Keep opacity visible
+          opacity: 1,
         },
         play: {
           pathLength: 1,
           opacity: 1,
           transition: {
             pathLength: { duration: recipe.duration, ease: 'linear', delay },
+          },
+        },
+        hover: {
+          pathLength: [1, 0.3, 1],  // Partial redraw effect on hover
+          opacity: 1,
+          transition: {
+            pathLength: { duration: recipe.duration * 1.5, ease: 'easeInOut', delay },
           },
         },
       };
@@ -57,6 +65,11 @@ function getPathVariants(
           opacity: 1,
           transition: baseTransition,
         },
+        hover: {
+          scale: [1, 1.15, 1],  // Pulse effect on hover
+          opacity: 1,
+          transition: { duration: recipe.duration * 0.8, ease: 'easeInOut', delay },
+        },
       };
 
     case 'wiggle':
@@ -65,10 +78,15 @@ function getPathVariants(
       return {
         idle: {
           rotate: 0,
-          opacity: 1,  // Always visible
+          opacity: 1,
         },
         play: {
           rotate: [0, -angle, angle, -angle, 0],
+          opacity: 1,
+          transition: baseTransition,
+        },
+        hover: {
+          rotate: [0, -angle, angle, -angle, 0],  // Same wiggle on hover
           opacity: 1,
           transition: baseTransition,
         },
@@ -93,6 +111,17 @@ function getPathVariants(
             delay,
           },
         },
+        hover: {
+          y: [0, -8, 0],  // Small bounce on hover
+          scale: 1,
+          opacity: 1,
+          transition: {
+            type: 'spring',
+            stiffness: 400,
+            damping: 10,
+            delay,
+          },
+        },
       };
 
     case 'draw-pop':
@@ -113,6 +142,12 @@ function getPathVariants(
             opacity: { duration: 0.2, delay },
           },
         },
+        hover: {
+          scale: [1, 1.1, 1],  // Pulse effect on hover
+          pathLength: 1,
+          opacity: 1,
+          transition: { duration: recipe.duration * 0.8, ease: 'easeInOut', delay },
+        },
       };
 
     case 'none':
@@ -120,13 +155,15 @@ function getPathVariants(
       return {
         idle: { opacity: 1 },
         play: { opacity: 1 },
+        hover: { opacity: 1 },
       };
 
     default:
       // Default: just visible
       return {
         idle: { opacity: 1 },
-        play: { opacity: 1 }
+        play: { opacity: 1 },
+        hover: { opacity: 1 },
       };
   }
 }
@@ -181,9 +218,9 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Simplified state - no timeline tracking
-  const [animationKey, setAnimationKey] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(true); // For click trigger
+  // Animation state
+  const [animationKey, setAnimationKey] = useState(() => Date.now()); // Unique key for remount
+  const [animateState, setAnimateState] = useState<'idle' | 'play'>('play'); // For controlling animation
 
   // New: Selected size for the size strip (larger default)
   const [selectedSize, setSelectedSize] = useState(96);
@@ -217,37 +254,43 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
 
   // Reset animation when SVG changes
   useEffect(() => {
-    setAnimationKey(prev => prev + 1);
-    setIsAnimating(true);
+    setAnimationKey(Date.now());
+    // For auto trigger, animate. For hover/click, show final state
+    setAnimateState(recipe.trigger === 'auto' ? 'play' : 'play');
   }, [parsedSVG.paths.length]);
 
-  // Re-trigger animation when ANY recipe property changes (always animate once on change)
+  // Re-trigger animation when recipe changes
+  // For auto: animate from idle to play
+  // For hover/click: just update key, icon stays in play state
   useEffect(() => {
-    setAnimationKey(prev => prev + 1);
-    setIsAnimating(true);
-  }, [recipe.preset, recipe.duration, recipe.stagger, recipe.easing, recipe.intensity]);
+    setAnimationKey(Date.now());
+    // Always animate once when settings change (so user can preview)
+    setAnimateState('play');
+  }, [recipe.preset, recipe.duration, recipe.stagger, recipe.easing, recipe.intensity, recipe.trigger]);
 
-  // Simple replay handler
+  // Replay handler - works for all triggers
   const handleReplay = () => {
-    setAnimationKey(prev => prev + 1);
-    setIsAnimating(true);
+    // Reset to idle, then animate to play
+    setAnimateState('idle');
+    setAnimationKey(Date.now());
+
+    // Small delay to ensure idle state is applied, then trigger play
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setAnimateState('play');
+      });
+    });
   };
 
-  // Handle click trigger
+  // Handle click trigger on the SVG
   const handleClickTrigger = () => {
-    if (recipe.trigger === 'click') {
-      setIsAnimating(false);
-      // Small delay to reset, then re-animate
-      setTimeout(() => {
-        setAnimationKey(prev => prev + 1);
-        setIsAnimating(true);
-      }, 50);
-    }
+    if (recipe.trigger !== 'click') return;
+    handleReplay();
   };
 
   // Expose methods via ref for keyboard shortcuts
   useImperativeHandle(ref, () => ({
-    togglePlay: handleReplay, // Map to replay since no play/pause
+    togglePlay: handleReplay,
     handleReplay,
   }));
 
@@ -591,7 +634,7 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                         transformBox: 'fill-box'
                       } as React.CSSProperties}
                     >
-                      {/* Animated Path - simplified without hover/selection overlays */}
+                      {/* Animated Path - trigger-based animation */}
                       <motion.path
                         key={`${path.id}-${animationKey}`}
                         className="animating-path"
@@ -604,11 +647,19 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                         strokeLinejoin={settings.lineJoin}
                         pathLength={1}
                         variants={getPathVariants(recipe, index)}
-                        initial="idle"
-                        animate="play"
+                        // TRIGGER-BASED ANIMATION:
+                        // Auto: start idle, animate to play
+                        // Hover/Click: start in play (visible), animate on interaction
+                        initial={recipe.trigger === 'auto' ? 'idle' : 'play'}
+                        animate={animateState}
+                        // For hover trigger: animate on hover
+                        whileHover={recipe.trigger === 'hover' ? 'hover' : undefined}
+                        // For click trigger: handle via onClick
+                        onClick={recipe.trigger === 'click' ? handleClickTrigger : undefined}
                         style={{
                           transformOrigin: 'center',
                           transformBox: 'fill-box',
+                          cursor: recipe.trigger !== 'auto' ? 'pointer' : 'default',
                         }}
                       />
                     </g>
