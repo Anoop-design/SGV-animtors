@@ -14,6 +14,8 @@ const ICON_SIZES = [16, 24, 32, 48, 64, 96];
 // getPathVariants - Generates Framer Motion variants based on recipe preset
 // Per new-presets.md architecture: Draw (pathLength), Pop (scale), Wiggle (rotate)
 // Now includes 'hover' variant for hover trigger animations
+// Uses recipe.transition for detailed ease/spring settings
+// Uses recipe.intensity to scale effect strength
 // -----------------------------------------------------------------------------
 
 function getPathVariants(
@@ -21,12 +23,32 @@ function getPathVariants(
   pathIndex: number
 ): Variants {
   const delay = pathIndex * recipe.stagger;
+  const transition = recipe.transition;
+  const intensity = recipe.intensity ?? 0.5;
 
-  // Common transition for most presets
-  const baseTransition = {
-    duration: recipe.duration,
-    ease: recipe.easing as Easing,
-    delay,
+  // Build transition object based on type (ease or spring)
+  const buildTransition = (additionalDelay = 0) => {
+    if (transition?.type === 'spring') {
+      return {
+        type: 'spring' as const,
+        stiffness: transition.stiffness,
+        damping: transition.damping,
+        mass: transition.mass,
+        delay: delay + (transition.delay || 0) + additionalDelay,
+      };
+    }
+    return {
+      duration: transition?.duration ?? recipe.duration,
+      ease: (transition?.ease ?? recipe.easing) as Easing,
+      delay: delay + (transition?.delay || 0) + additionalDelay,
+    };
+  };
+
+  // Common transition for tween animations
+  const baseTweenTransition = {
+    duration: transition?.duration ?? recipe.duration,
+    ease: (transition?.ease ?? recipe.easing) as Easing,
+    delay: delay + (transition?.delay || 0),
   };
 
   switch (recipe.preset) {
@@ -41,14 +63,14 @@ function getPathVariants(
           pathLength: 1,
           opacity: 1,
           transition: {
-            pathLength: { duration: recipe.duration, ease: 'linear', delay },
+            pathLength: { duration: transition?.duration ?? recipe.duration, ease: 'linear', delay: delay + (transition?.delay || 0) },
           },
         },
         hover: {
-          pathLength: [1, 0.3, 1],  // Partial redraw effect on hover
+          pathLength: [1, 1 - (0.7 * intensity), 1],  // Partial redraw effect, scaled by intensity
           opacity: 1,
           transition: {
-            pathLength: { duration: recipe.duration * 1.5, ease: 'easeInOut', delay },
+            pathLength: { duration: (transition?.duration ?? recipe.duration) * 1.5, ease: 'easeInOut', delay },
           },
         },
       };
@@ -63,18 +85,18 @@ function getPathVariants(
         play: {
           scale: 1,
           opacity: 1,
-          transition: baseTransition,
+          transition: buildTransition(),
         },
         hover: {
-          scale: [1, 1.15, 1],  // Pulse effect on hover
+          scale: [1, 1 + (0.3 * intensity), 1],  // Pulse effect scaled by intensity
           opacity: 1,
-          transition: { duration: recipe.duration * 0.8, ease: 'easeInOut', delay },
+          transition: baseTweenTransition,
         },
       };
 
     case 'wiggle':
       // Wiggle: shake back and forth (icon should be visible in idle)
-      const angle = 10 * recipe.intensity;
+      const angle = 20 * intensity;  // Max angle scaled by intensity
       return {
         idle: {
           rotate: 0,
@@ -83,41 +105,42 @@ function getPathVariants(
         play: {
           rotate: [0, -angle, angle, -angle, 0],
           opacity: 1,
-          transition: baseTransition,
+          transition: baseTweenTransition,
         },
         hover: {
           rotate: [0, -angle, angle, -angle, 0],  // Same wiggle on hover
           opacity: 1,
-          transition: baseTransition,
+          transition: baseTweenTransition,
         },
       };
 
     case 'bounce':
       // Bounce: spring up from below
+      const bounceY = 20 * intensity;  // Y offset scaled by intensity
       return {
         idle: {
-          scale: 0.8,
-          y: 10,
+          scale: 1 - (0.4 * intensity),
+          y: bounceY,
           opacity: 0
         },
         play: {
           scale: 1,
           y: 0,
           opacity: 1,
-          transition: {
+          transition: transition?.type === 'spring' ? buildTransition() : {
             type: 'spring',
-            stiffness: 300,
-            damping: 10,
-            delay,
+            stiffness: transition?.stiffness ?? 300,
+            damping: transition?.damping ?? 10,
+            delay: delay + (transition?.delay || 0),
           },
         },
         hover: {
-          y: [0, -8, 0],  // Small bounce on hover
+          y: [0, -16 * intensity, 0],  // Bounce height scaled by intensity
           scale: 1,
           opacity: 1,
           transition: {
             // Use tween for keyframe arrays (spring only supports 2 frames)
-            duration: recipe.duration * 0.6,
+            duration: (transition?.duration ?? recipe.duration) * 0.6,
             ease: 'easeInOut',
             delay,
           },
@@ -126,10 +149,11 @@ function getPathVariants(
 
     case 'draw-pop':
       // Draw+Pop: draw first, then scale/pop
+      const duration = transition?.duration ?? recipe.duration;
       return {
         idle: {
           pathLength: 0,
-          scale: 0.8,
+          scale: 1 - (0.4 * intensity),
           opacity: 0,
         },
         play: {
@@ -137,16 +161,16 @@ function getPathVariants(
           scale: 1,
           opacity: 1,
           transition: {
-            pathLength: { duration: recipe.duration * 0.6, ease: 'linear', delay },
-            scale: { duration: recipe.duration * 0.4, ease: 'easeOut', delay: delay + recipe.duration * 0.5 },
-            opacity: { duration: 0.2, delay },
+            pathLength: { duration: duration * 0.6, ease: 'linear', delay: delay + (transition?.delay || 0) },
+            scale: { duration: duration * 0.4, ease: 'easeOut', delay: delay + (transition?.delay || 0) + duration * 0.5 },
+            opacity: { duration: 0.2, delay: delay + (transition?.delay || 0) },
           },
         },
         hover: {
-          scale: [1, 1.1, 1],  // Pulse effect on hover
+          scale: [1, 1 + (0.2 * intensity), 1],  // Pulse scaled by intensity
           pathLength: 1,
           opacity: 1,
-          transition: { duration: recipe.duration * 0.8, ease: 'easeInOut', delay },
+          transition: { duration: duration * 0.8, ease: 'easeInOut', delay },
         },
       };
 

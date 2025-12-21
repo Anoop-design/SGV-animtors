@@ -12,13 +12,17 @@ import {
     PathTransform,
     DEFAULT_PATH_TRANSFORM,
     AnimationRecipe,
-    EasingType
+    EasingType,
+    DEFAULT_RECIPE,
+    DEFAULT_RECIPE_TRANSITION,
+    RecipeTransition
 } from '@/types';
 import { Slider } from '@/components/ui/Slider';
 import { NumberInput } from '@/components/ui/NumberInput';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
-import { GripVertical, Eye, EyeOff, X, ChevronDown, Ban, Pencil, Zap, Activity, ArrowUpDown, Sparkles } from 'lucide-react';
+import { TransitionEditor } from '@/components/ui/TransitionEditor';
+import { GripVertical, Eye, EyeOff, X, ChevronDown, Ban, Pencil, Zap, Activity, ArrowUpDown, Sparkles, RotateCcw } from 'lucide-react';
 import { isInputFocused } from '@/lib/useKeyboardShortcuts';
 import '@/styles.css';
 
@@ -66,6 +70,20 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     const [layersOpen, setLayersOpen] = useState(false);
     const [appearanceOpen, setAppearanceOpen] = useState(false);
+    const [transitionEditorOpen, setTransitionEditorOpen] = useState(false);
+
+    // Check if animation values are modified from defaults
+    const isAnimationModified =
+        recipe.intensity !== DEFAULT_RECIPE.intensity ||
+        recipe.stagger !== DEFAULT_RECIPE.stagger ||
+        JSON.stringify(recipe.transition) !== JSON.stringify(DEFAULT_RECIPE_TRANSITION);
+
+    // Reset animation values to defaults
+    const resetAnimationDefaults = () => {
+        updateRecipe('intensity', DEFAULT_RECIPE.intensity);
+        updateRecipe('stagger', DEFAULT_RECIPE.stagger);
+        updateRecipe('transition', DEFAULT_RECIPE_TRANSITION);
+    };
 
     // Get active path for editing
     const activePath = selectedPathIndex !== null && selectedPathIndex !== undefined ? paths[selectedPathIndex] : null;
@@ -271,10 +289,55 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                         </motion.div>
                     </div>
 
-                    {/* Stagger Section */}
+                    {/* Animation Section */}
                     <div className="controls-section">
-                        <span className="controls-section-title">Animation</span>
+                        <div className="controls-section-title-row">
+                            <span className="controls-section-title">Animation</span>
+                            {isAnimationModified && (
+                                <button
+                                    className="section-reset-button"
+                                    onClick={resetAnimationDefaults}
+                                    title="Reset to defaults"
+                                >
+                                    <RotateCcw size={10} style={{ marginRight: '4px' }} />
+                                    Reset
+                                </button>
+                            )}
+                        </div>
 
+                        {/* Intensity Slider */}
+                        <div className="controls-field">
+                            <span className="controls-field-label">Intensity</span>
+                            <div className="controls-field-input-group">
+                                <Slider
+                                    min={0} max={1} step={0.05}
+                                    value={recipe.intensity}
+                                    onChange={(val) => updateRecipe('intensity', val)}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Transition Control - Button that opens editor */}
+                        <div className="controls-field">
+                            <span className="controls-field-label">Transition</span>
+                            <button
+                                className="transition-button"
+                                onClick={() => setTransitionEditorOpen(true)}
+                            >
+                                <span className="transition-button-label">
+                                    {recipe.transition?.type === 'spring' ? 'Spring' : 'Ease'}
+                                </span>
+                                <span className="transition-button-value">
+                                    {recipe.transition?.type === 'spring'
+                                        ? `${recipe.transition.stiffness}/${recipe.transition.damping}`
+                                        : `${recipe.transition?.duration || recipe.duration}s`
+                                    }
+                                </span>
+                                <ChevronDown size={14} />
+                            </button>
+                        </div>
+
+                        {/* Stagger Slider */}
                         <div className="controls-field">
                             <span className="controls-field-label">Stagger</span>
                             <div className="controls-field-input-group">
@@ -291,6 +354,7 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                             </div>
                         </div>
 
+                        {/* Stagger Pattern */}
                         <div className="controls-field">
                             <span className="controls-field-label">Pattern</span>
                             <div style={{ flex: 1 }}>
@@ -309,6 +373,14 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                     </div>
                 </motion.div>
             </div>
+
+            {/* TransitionEditor Modal */}
+            <TransitionEditor
+                isOpen={transitionEditorOpen}
+                onClose={() => setTransitionEditorOpen(false)}
+                transition={recipe.transition || DEFAULT_RECIPE_TRANSITION}
+                onChange={(newTransition) => updateRecipe('transition', newTransition)}
+            />
         </div>
     );
 };

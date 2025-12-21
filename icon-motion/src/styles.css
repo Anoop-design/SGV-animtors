@@ -1217,6 +1217,162 @@
     font-weight: 600;
 }
 
+/* =============================================================================
+   TRANSITION BUTTON - Opens transition editor modal
+   ============================================================================= */
+
+/* Transition button - clickable control that shows current transition settings */
+.transition-button {
+    /* Full width button layout */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    /* Padding inside button */
+    padding: 8px 12px;
+    /* Appearance - matches input styling */
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    /* Text styling */
+    font-size: 12px;
+    color: var(--text-primary);
+    /* Interaction */
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.transition-button:hover {
+    background-color: var(--bg-button-hover);
+    border-color: var(--border-input-focus);
+}
+
+/* Transition type label (Ease/Spring) */
+.transition-button-label {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Transition value (0.6s or 300/15) */
+.transition-button-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-left: auto;
+    margin-right: 8px;
+}
+
+/* Chevron icon in transition button */
+.transition-button svg {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+/* =============================================================================
+   TRANSITION EDITOR MODAL - Popup for editing transition settings
+   ============================================================================= */
+
+/* Backdrop overlay behind modal */
+.transition-editor-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 100;
+}
+
+/* Modal container */
+.transition-editor {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* Modal size */
+    width: 320px;
+    max-height: 80vh;
+    overflow-y: auto;
+    /* Appearance */
+    background: var(--bg-card);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    z-index: 101;
+}
+
+/* Modal header */
+.transition-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.transition-editor-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Close button */
+.transition-editor-close {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.15s ease;
+}
+
+.transition-editor-close:hover {
+    background: var(--bg-input);
+    color: var(--text-primary);
+}
+
+/* Modal content area */
+.transition-editor-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* =============================================================================
+   SECTION HEADER WITH RESET - Title with optional reset button
+   ============================================================================= */
+
+/* Wrapper for section title + reset button */
+.controls-section-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+/* Reset button - appears when values are customized */
+.section-reset-button {
+    /* Small, subtle button */
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.section-reset-button:hover {
+    color: var(--text-primary);
+    background: var(--bg-button-hover);
+    border-color: var(--border-input-focus);
+}
+
 .layers-list {
     display: flex;
     flex-direction: column;
@@ -1845,7 +2001,7 @@
 .controls-section {
     padding-bottom: 20px;
     padding-top: 20px;
-  
+
     border-bottom: 1px solid var(--border-subtle);
     box-shadow: 0px 1px 0px 0px var(--shadow-white);
     display: flex;
@@ -1857,6 +2013,7 @@
     border-bottom: 1px solid var(--border-subtle);
     box-shadow: 0px 1px 0px 0px var(--shadow-white);
     margin-bottom: 2px;
+    gap: 12px;
 }
 
 .controls-section:first-child {

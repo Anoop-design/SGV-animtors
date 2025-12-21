@@ -168,24 +168,51 @@ export interface TransformPreset {
 
 export type PresetType = 'none' | 'draw' | 'pop' | 'wiggle' | 'bounce' | 'draw-pop';
 
+// Transition configuration for detailed ease/spring settings
+export interface RecipeTransition {
+  type: 'ease' | 'spring';
+  // Ease settings
+  duration: number;      // Duration in seconds (for ease type)
+  delay: number;         // Delay before animation starts
+  ease: string | [number, number, number, number];  // Easing preset or cubic-bezier
+  // Spring settings
+  stiffness: number;     // Spring stiffness (50-1000, default: 300)
+  damping: number;       // Spring damping (5-50, default: 15)
+  mass: number;          // Spring mass (0.1-5, default: 1)
+}
+
+export const DEFAULT_RECIPE_TRANSITION: RecipeTransition = {
+  type: 'ease',
+  duration: 0.6,
+  delay: 0,
+  ease: 'easeOut',
+  stiffness: 300,
+  damping: 15,
+  mass: 1,
+};
+
 export interface AnimationRecipe {
   preset: PresetType;
-  duration: number;      // Animation duration in seconds
-  easing: EasingType;    // Easing function
-  intensity: number;     // Multiplier for effect strength (0.5-2, default: 1)
+  intensity: number;     // Multiplier for effect strength (0-1, default: 0.5)
   stagger: number;       // Delay between each path animating (seconds)
+  transition: RecipeTransition;  // Detailed transition settings
   loop: boolean;         // Whether animation repeats
   trigger: TriggerType;  // When animation triggers
+  // Legacy fields (kept for backward compatibility)
+  duration: number;      // Shortcut to transition.duration
+  easing: EasingType;    // Shortcut to transition.ease
 }
 
 export const DEFAULT_RECIPE: AnimationRecipe = {
   preset: 'draw',
-  duration: 0.6,
-  easing: 'easeOut',
-  intensity: 1,
+  intensity: 0.5,
   stagger: 0.15,
+  transition: DEFAULT_RECIPE_TRANSITION,
   loop: false,
   trigger: 'auto',
+  // Legacy shortcuts
+  duration: 0.6,
+  easing: 'easeOut',
 };
 
 // Preset metadata for UI display - 3x2 grid order
