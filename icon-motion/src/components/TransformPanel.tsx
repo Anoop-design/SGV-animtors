@@ -22,7 +22,8 @@ import { NumberInput } from '@/components/ui/NumberInput';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TransitionEditor } from '@/components/ui/TransitionEditor';
-import { GripVertical, Eye, EyeOff, X, ChevronDown, Ban, Pencil, Zap, Activity, ArrowUpDown, Sparkles, RotateCcw } from 'lucide-react';
+import { AnimatedPresetIcon } from '@/components/ui/AnimatedPresetIcon';
+import { GripVertical, Eye, EyeOff, X, ChevronDown, RotateCcw } from 'lucide-react';
 import { isInputFocused } from '@/lib/useKeyboardShortcuts';
 import '@/styles.css';
 
@@ -71,6 +72,7 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
     const [layersOpen, setLayersOpen] = useState(false);
     const [appearanceOpen, setAppearanceOpen] = useState(false);
     const [transitionEditorOpen, setTransitionEditorOpen] = useState(false);
+    const [hoveredPreset, setHoveredPreset] = useState<PresetType | null>(null);
     const transitionButtonRef = useRef<HTMLButtonElement>(null);
 
     // Check if animation values are modified from defaults
@@ -174,39 +176,21 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                         <div className="preset-grid">
                             {PRESET_OPTIONS.map((preset) => {
                                 const isSelected = recipe.preset === preset.value;
-                                const IconComponent = {
-                                    'ban': Ban,
-                                    'pencil': Pencil,
-                                    'zap': Zap,
-                                    'activity': Activity,
-                                    'arrow-up-down': ArrowUpDown,
-                                    'sparkles': Sparkles,
-                                }[preset.icon] || Ban;
 
                                 return (
                                     <motion.button
                                         key={preset.value}
                                         onClick={() => applyPreset(preset.value)}
+                                        onMouseEnter={() => setHoveredPreset(preset.value)}
+                                        onMouseLeave={() => setHoveredPreset(null)}
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         className={`preset-button ${isSelected ? 'selected' : ''}`}
                                     >
-                                        <motion.div
-                                            initial={false}
-                                            whileHover={
-                                                preset.value === 'wiggle' ? { rotate: [0, -10, 10, -10, 0], transition: { duration: 0.5 } } :
-                                                    preset.value === 'pop' ? { scale: [1, 1.3, 1], transition: { duration: 0.3 } } :
-                                                        preset.value === 'bounce' ? { y: [0, -8, 0], transition: { type: 'spring', stiffness: 400 } } :
-                                                            preset.value === 'draw' ? { opacity: [0.3, 1], transition: { duration: 0.4 } } :
-                                                                preset.value === 'draw-pop' ? { scale: [0.8, 1.2, 1], opacity: [0, 1], transition: { duration: 0.4 } } :
-                                                                    {}
-                                            }
-                                        >
-                                            <IconComponent
-                                                size={20}
-                                                color="var(--text-primary)"
-                                            />
-                                        </motion.div>
+                                        <AnimatedPresetIcon
+                                            preset={preset.value}
+                                            isHovered={hoveredPreset === preset.value}
+                                        />
                                         <span className="preset-label">
                                             {preset.label}
                                         </span>
