@@ -1,6 +1,115 @@
-import { ParsedSVG, AnimationSettings } from '@/types';
+import { ParsedSVG, AnimationSettings, AnimationRecipe, StaggerType, PresetType } from '@/types';
 
 export type ExportType = 'svg' | 'react' | 'css' | 'framer-motion' | 'framer-motion-pro' | 'gsap' | 'vue';
+
+// -----------------------------------------------------------------------------
+// Stagger Delay Calculator for Export
+// Calculates animation delay based on stagger pattern
+// -----------------------------------------------------------------------------
+
+function calculateExportStaggerDelay(
+  pathIndex: number,
+  totalPaths: number,
+  stagger: number,
+  staggerType: StaggerType
+): number {
+  if (totalPaths <= 1) return 0;
+
+  switch (staggerType) {
+    case 'none':
+      return 0;
+    case 'by-index':
+      return pathIndex * stagger;
+    case 'by-index-reverse':
+      return (totalPaths - 1 - pathIndex) * stagger;
+    case 'from-center':
+      const center = (totalPaths - 1) / 2;
+      return Math.abs(pathIndex - center) * stagger;
+    case 'random':
+      const pseudoRandom = Math.abs(Math.sin(pathIndex * 12.9898 + 78.233) * 43758.5453) % 1;
+      return pseudoRandom * totalPaths * stagger;
+    case 'by-size':
+      return pathIndex * stagger;
+    default:
+      return pathIndex * stagger;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Generate Preset-Specific Animation Variants
+// -----------------------------------------------------------------------------
+
+function getPresetVariants(preset: PresetType, intensity: number = 0.5): {
+  initial: string;
+  animate: string;
+  hover: string;
+} {
+  switch (preset) {
+    case 'draw':
+      return {
+        initial: '{ pathLength: 0, opacity: 0 }',
+        animate: '{ pathLength: 1, opacity: 1 }',
+        hover: '{ pathLength: [1, 0.3, 1], opacity: 1 }',
+      };
+    case 'pop':
+      return {
+        initial: '{ scale: 0, opacity: 0 }',
+        animate: '{ scale: 1, opacity: 1 }',
+        hover: `{ scale: [1, ${1 + 0.3 * intensity}, 1], opacity: 1 }`,
+      };
+    case 'wiggle':
+      const angle = Math.round(20 * intensity);
+      return {
+        initial: '{ rotate: 0, opacity: 1 }',
+        animate: `{ rotate: [0, -${angle}, ${angle}, -${angle}, 0], opacity: 1 }`,
+        hover: `{ rotate: [0, -${angle}, ${angle}, -${angle}, 0], opacity: 1 }`,
+      };
+    case 'bounce':
+      const bounceY = Math.round(20 * intensity);
+      return {
+        initial: `{ y: ${bounceY}, opacity: 1 }`,
+        animate: `{ y: [${bounceY}, -8, 3, 0], opacity: 1 }`,
+        hover: '{ y: [0, -8, 3, 0], opacity: 1 }',
+      };
+    case 'fade':
+      return {
+        initial: '{ opacity: 0 }',
+        animate: '{ opacity: 1 }',
+        hover: '{ opacity: [1, 0.5, 1] }',
+      };
+    case 'slide':
+      const slideY = Math.round(15 * intensity);
+      return {
+        initial: `{ y: ${slideY}, opacity: 1 }`,
+        animate: '{ y: 0, opacity: 1 }',
+        hover: '{ y: [0, -5, 0], opacity: 1 }',
+      };
+    case 'spin':
+      return {
+        initial: '{ rotate: 0, opacity: 1 }',
+        animate: '{ rotate: 360, opacity: 1 }',
+        hover: '{ rotate: 360, opacity: 1 }',
+      };
+    case 'pulse':
+      return {
+        initial: '{ scale: 1, opacity: 1 }',
+        animate: '{ scale: [1, 1.15, 1, 1.1, 1], opacity: 1 }',
+        hover: '{ scale: [1, 1.15, 1, 1.1, 1], opacity: 1 }',
+      };
+    case 'draw-pop':
+      return {
+        initial: `{ pathLength: 0, scale: ${1 - 0.4 * intensity}, opacity: 0 }`,
+        animate: '{ pathLength: 1, scale: 1, opacity: 1 }',
+        hover: `{ scale: [1, ${1 + 0.2 * intensity}, 1], pathLength: 1, opacity: 1 }`,
+      };
+    default:
+      return {
+        initial: '{ opacity: 0 }',
+        animate: '{ opacity: 1 }',
+        hover: '{ opacity: 1 }',
+      };
+  }
+}
 
 interface ExportData {
   visiblePaths: Array<any>;
@@ -286,23 +395,53 @@ export function downloadSVG(content: string, filename: string = 'animated-icon.s
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
 /**
  * Generate production-ready React component with TypeScript
  * Includes: configurable props, imperative ref, trigger support
+ * NOW SUPPORTS: All presets (draw, pop, wiggle, bounce, spin, etc.) from recipe
  */
 export function generateProExport(
   parsedSVG: ParsedSVG,
   settings: AnimationSettings,
+  recipe: AnimationRecipe,
   componentName: string = 'AnimatedIcon'
 ): string {
-  const { visiblePaths, getPathAttrs, getDelay } = generateExportData(parsedSVG, settings);
+  const { visiblePaths, getPathAttrs } = generateExportData(parsedSVG, settings);
+  const totalPaths = visiblePaths.length;
 
-  // Generate path elements
+  // Get preset-specific animation variants
+  const variants = getPresetVariants(recipe.preset, recipe.intensity);
+
+  // Determine if we're animating the SVG wrapper (unified) or individual paths
+  const isUnified = recipe.layerMode === 'unified';
+
+  // Get transition config
+  const duration = recipe.transition?.duration ?? recipe.duration;
+  const ease = recipe.transition?.ease ?? recipe.easing;
+
+  // Determine if spin/pulse presets need continuous animation
+  const isContinuous = recipe.preset === 'spin' || recipe.preset === 'pulse';
+
+  // Generate path elements with proper animations
   const pathElements = visiblePaths.map((path, index) => {
     const attrs = getPathAttrs(path);
-    const delay = getDelay(path.originalIndex);
+    const delay = calculateExportStaggerDelay(index, totalPaths, recipe.stagger, recipe.staggerType);
 
+    // For unified mode, paths don't have individual animations
+    if (isUnified) {
+      return `        <motion.path
+          key="${index}"
+          d="${attrs.d}"
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ transformOrigin: "center", transformBox: "fill-box" }}
+        />`;
+    }
+
+    // Individual mode - each path animates with its own delay
     return `        <motion.path
           key="${index}"
           d="${attrs.d}"
@@ -311,19 +450,30 @@ export function generateProExport(
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeLinejoin="round"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={isAnimating ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+          initial={${variants.initial}}
+          animate={isAnimating ? ${variants.animate} : ${variants.initial}}
           transition={{
-            pathLength: { duration: duration / 1000, delay: ${delay} * speedMultiplier, ease: "easeOut" },
-            opacity: { duration: 0.15, delay: ${delay} * speedMultiplier }
+            duration: duration / 1000,
+            delay: ${delay.toFixed(3)} * speedMultiplier,
+            ease: "${ease}"${isContinuous && recipe.loop ? ',\n            repeat: Infinity,\n            repeatType: "loop"' : ''}
           }}
+          style={{ transformOrigin: "center", transformBox: "fill-box" }}
         />`;
   }).join('\n');
 
+  // SVG wrapper animation for unified mode
+  const svgAnimation = isUnified ? `
+        initial={${variants.initial}}
+        animate={isAnimating ? ${variants.animate} : ${variants.initial}}
+        transition={{
+          duration: duration / 1000,
+          ease: "${ease}"${isContinuous && recipe.loop ? ',\n          repeat: Infinity,\n          repeatType: "loop"' : ''}
+        }}` : '';
+
   return `"use client";
 
-import React, { forwardRef, useImperativeHandle, useState, useCallback, useEffect } from "react";
-import { motion, useAnimation, AnimationControls } from "framer-motion";
+import React, { forwardRef, useImperativeHandle, useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 // =============================================================================
 // TYPE DEFINITIONS
@@ -355,14 +505,11 @@ export interface ${componentName}Ref {
   animate: () => void;
   /** Reset to initial state */
   reset: () => void;
-  /** Pause the animation */
-  pause: () => void;
-  /** Resume a paused animation */
-  resume: () => void;
 }
 
 // =============================================================================
 // COMPONENT
+// Preset: ${recipe.preset} | Layer Mode: ${recipe.layerMode} | Trigger: ${recipe.trigger}
 // =============================================================================
 
 export const ${componentName} = forwardRef<${componentName}Ref, ${componentName}Props>(
@@ -371,16 +518,16 @@ export const ${componentName} = forwardRef<${componentName}Ref, ${componentName}
       size = 24,
       color = "currentColor",
       strokeWidth = 2,
-      trigger = "${settings.trigger || 'auto'}",
-      duration = ${Math.round(settings.duration * 1000)},
+      trigger = "${recipe.trigger}",
+      duration = ${Math.round(duration * 1000)},
       delay = 0,
-      loop = ${settings.loop},
+      loop = ${recipe.loop},
       className,
     },
     ref
   ) => {
     const [isAnimating, setIsAnimating] = useState(trigger === "auto");
-    const speedMultiplier = duration / ${Math.round(settings.duration * 1000)};
+    const speedMultiplier = duration / ${Math.round(duration * 1000)};
     
     const fill = "none";
     const stroke = color;
@@ -389,8 +536,6 @@ export const ${componentName} = forwardRef<${componentName}Ref, ${componentName}
     useImperativeHandle(ref, () => ({
       animate: () => setIsAnimating(true),
       reset: () => setIsAnimating(false),
-      pause: () => {/* Framer Motion doesn't support pause natively */},
-      resume: () => {/* Framer Motion doesn't support resume natively */},
     }));
 
     // Handle auto trigger
@@ -401,10 +546,10 @@ export const ${componentName} = forwardRef<${componentName}Ref, ${componentName}
       }
     }, [trigger, delay]);
 
-    // Handle loop
+    // Handle loop (for non-continuous animations)
     useEffect(() => {
-      if (loop && isAnimating) {
-        const totalDuration = duration + ${Math.round((settings.staggerAmount || 0) * 1000 * visiblePaths.length)};
+      if (loop && isAnimating && ${!isContinuous}) {
+        const totalDuration = duration + ${Math.round(recipe.stagger * 1000 * totalPaths)};
         const timer = setTimeout(() => {
           setIsAnimating(false);
           setTimeout(() => setIsAnimating(true), 100);
@@ -443,7 +588,7 @@ export const ${componentName} = forwardRef<${componentName}Ref, ${componentName}
         onMouseEnter={handleHover}
         onMouseLeave={handleHoverEnd}
         onClick={handleClick}
-        style={{ cursor: trigger !== "auto" && trigger !== "manual" ? "pointer" : "default" }}
+        style={{ cursor: trigger !== "auto" && trigger !== "manual" ? "pointer" : "default", transformOrigin: "center" }}${svgAnimation}
       >
 ${pathElements}
       </motion.svg>
@@ -467,16 +612,16 @@ function App() {
 
   return (
     <>
-      {/* Auto-animate on load *}
+      {/* Auto-animate on load */}
       <${componentName} size={32} color="#6366f1" trigger="auto" />
 
-      {/* Animate on hover *}
+      {/* Animate on hover */}
       <${componentName} size={24} trigger="hover" />
 
-      {/* Animate on click *}
+      {/* Animate on click */}
       <${componentName} size={48} trigger="click" loop />
 
-      {/* Manual control via ref *}
+      {/* Manual control via ref */}
       <${componentName} ref={iconRef} trigger="manual" />
       <button onClick={() => iconRef.current?.animate()}>Play</button>
       <button onClick={() => iconRef.current?.reset()}>Reset</button>

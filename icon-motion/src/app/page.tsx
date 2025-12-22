@@ -6,10 +6,11 @@ import { Preview } from '@/components/Preview';
 import { AddSVGPanel } from '@/components/AddSVGPanel';
 import { TransformPanel } from '@/components/TransformPanel';
 import { HelpModal } from '@/components/HelpModal';
+import { ExportModal } from '@/components/ExportModal';
 import { ToastContainer, useToast } from '@/components/Toast';
 import { AnimationSettings, DEFAULT_ICON, ParsedSVG, DEFAULT_PATH_TRANSFORM, DEFAULT_GLOBAL_TRANSFORM, PathTransform, AnimationRecipe, DEFAULT_RECIPE, PresetType } from '@/types';
 import { parseSVG } from '@/lib/svg-utils';
-import { generateExport, downloadSVG, ExportType } from '@/lib/generate-export';
+import { generateExport, generateProExport, downloadSVG, ExportType } from '@/lib/generate-export';
 import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
 import {
   Project,
@@ -44,6 +45,7 @@ export default function IconMotionEditor() {
   const [selectedPathIndex, setSelectedPathIndex] = useState<number | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
 
   // Responsive panel state
@@ -248,7 +250,10 @@ export default function IconMotionEditor() {
   };
 
   const handleExport = (type: ExportType) => {
-    const code = generateExport(parsedSVG, settings, type);
+    // Use Pro export with recipe for the advanced export
+    const code = type === 'framer-motion-pro'
+      ? generateProExport(parsedSVG, settings, recipe, 'AnimatedIcon')
+      : generateExport(parsedSVG, settings, type);
     navigator.clipboard.writeText(code);
 
     const labels: Record<ExportType, string> = {
@@ -345,6 +350,7 @@ export default function IconMotionEditor() {
         theme={theme}
         onToggleTheme={toggleTheme}
         onShowHelp={() => setShowHelpModal(true)}
+        onShowExportModal={() => setShowExportModal(true)}
         onToggleLeftPanel={() => setLeftPanelOpen(prev => !prev)}
         onToggleRightPanel={() => setRightPanelOpen(prev => !prev)}
         leftPanelOpen={leftPanelOpen}
@@ -413,6 +419,15 @@ export default function IconMotionEditor() {
 
       {/* Help Modal */}
       <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
+
+      {/* Export Modal with Live Preview */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        parsedSVG={parsedSVG}
+        settings={settings}
+        recipe={recipe}
+      />
     </div>
   );
 }
