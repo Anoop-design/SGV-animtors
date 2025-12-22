@@ -238,7 +238,134 @@ export const PRESET_OPTIONS: { value: PresetType; label: string; description: st
   { value: 'pulse', label: 'Pulse', description: 'Pulsing heartbeat effect', icon: 'heart' },
 ];
 
+// -----------------------------------------------------------------------------
+// Smart Presets - Pre-configured animation recipes for common use cases
+// Each applies a complete set of animation settings with one click
+// -----------------------------------------------------------------------------
 
+export interface SmartPreset {
+  id: string;
+  name: string;
+  icon: string;              // Lucide icon name
+  description: string;
+  recipe: Partial<AnimationRecipe>;  // Settings to apply
+}
+
+export const SMART_PRESETS: SmartPreset[] = [
+  {
+    id: 'loading-spinner',
+    name: 'Loading Spinner',
+    icon: 'loader',
+    description: 'Continuous spinning',
+    recipe: {
+      preset: 'spin',
+      trigger: 'auto',
+      loop: true,
+      layerMode: 'unified',
+      intensity: 0.5,
+    }
+  },
+  {
+    id: 'success-check',
+    name: 'Success Check',
+    icon: 'check-circle',
+    description: 'Draw animation',
+    recipe: {
+      preset: 'draw',
+      trigger: 'auto',
+      loop: false,
+      layerMode: 'individual',
+      stagger: 0.1,
+      staggerType: 'by-index',
+      intensity: 0.6,
+    }
+  },
+  {
+    id: 'attention-pulse',
+    name: 'Attention Pulse',
+    icon: 'bell',
+    description: 'Pulsing notification',
+    recipe: {
+      preset: 'pulse',
+      trigger: 'auto',
+      loop: true,
+      layerMode: 'unified',
+      intensity: 0.7,
+    }
+  },
+  {
+    id: 'hover-reveal',
+    name: 'Hover Reveal',
+    icon: 'sparkles',
+    description: 'Draw on hover',
+    recipe: {
+      preset: 'draw',
+      trigger: 'hover',
+      loop: false,
+      layerMode: 'individual',
+      stagger: 0.08,
+      staggerType: 'by-index',
+      intensity: 0.5,
+    }
+  },
+  {
+    id: 'click-bounce',
+    name: 'Click Bounce',
+    icon: 'mouse-pointer-click',
+    description: 'Bounce on click',
+    recipe: {
+      preset: 'bounce',
+      trigger: 'click',
+      loop: false,
+      layerMode: 'individual',
+      stagger: 0.05,
+      intensity: 0.6,
+    }
+  },
+  {
+    id: 'slide-in',
+    name: 'Slide In',
+    icon: 'arrow-up',
+    description: 'Slide up entrance',
+    recipe: {
+      preset: 'slide',
+      trigger: 'auto',
+      loop: false,
+      layerMode: 'individual',
+      stagger: 0.1,
+      staggerType: 'by-index',
+      intensity: 0.5,
+    }
+  },
+  {
+    id: 'entrance-pop',
+    name: 'Entrance Pop',
+    icon: 'maximize-2',
+    description: 'Pop in with scale',
+    recipe: {
+      preset: 'pop',
+      trigger: 'auto',
+      loop: false,
+      layerMode: 'individual',
+      stagger: 0.12,
+      staggerType: 'from-center',
+      intensity: 0.6,
+    }
+  },
+  {
+    id: 'wiggle-alert',
+    name: 'Wiggle Alert',
+    icon: 'vibrate',
+    description: 'Attention grabber',
+    recipe: {
+      preset: 'wiggle',
+      trigger: 'hover',
+      loop: false,
+      layerMode: 'unified',
+      intensity: 0.7,
+    }
+  },
+];
 // -----------------------------------------------------------------------------
 // Path Transform (legacy - for per-path customization)
 // -----------------------------------------------------------------------------

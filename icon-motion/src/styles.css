@@ -3569,3 +3569,50 @@
         animation: none;
     }
 }
+
+/* =============================================================================
+   SMART PRESETS - Pre-configured animation recipes
+   ============================================================================= */
+
+/* Option container in dropdown */
+.smart-preset-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+/* Icon container */
+.smart-preset-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background-color: var(--bg-button);
+    color: var(--text-secondary);
+}
+
+/* Text container */
+.smart-preset-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Preset name */
+.smart-preset-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Preset description */
+.smart-preset-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+}

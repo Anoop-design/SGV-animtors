@@ -17,7 +17,8 @@ import {
     EasingType,
     DEFAULT_RECIPE,
     DEFAULT_RECIPE_TRANSITION,
-    RecipeTransition
+    RecipeTransition,
+    SMART_PRESETS
 } from '@/types';
 import { Slider } from '@/components/ui/Slider';
 import { NumberInput } from '@/components/ui/NumberInput';
@@ -25,7 +26,7 @@ import { Dropdown } from '@/components/ui/Dropdown';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TransitionEditor } from '@/components/ui/TransitionEditor';
 import { AnimatedPresetIcon } from '@/components/ui/AnimatedPresetIcon';
-import { GripVertical, Eye, EyeOff, X, ChevronDown, RotateCcw } from 'lucide-react';
+import { GripVertical, Eye, EyeOff, X, ChevronDown, RotateCcw, Loader, CheckCircle, Bell, Sparkles, MousePointerClick, ArrowUp, Maximize2, Vibrate } from 'lucide-react';
 import { isInputFocused } from '@/lib/useKeyboardShortcuts';
 import '@/styles.css';
 
@@ -99,6 +100,32 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
         updateRecipe('preset', presetId as PresetType);
     };
 
+    // Apply smart preset - applies all recipe settings at once
+    const applySmartPreset = (presetId: string) => {
+        const smartPreset = SMART_PRESETS.find(p => p.id === presetId);
+        if (!smartPreset) return;
+
+        // Apply all recipe overrides from the smart preset
+        Object.entries(smartPreset.recipe).forEach(([key, value]) => {
+            updateRecipe(key as keyof AnimationRecipe, value);
+        });
+    };
+
+    // Map icon names to Lucide components
+    const getSmartPresetIcon = (iconName: string) => {
+        const iconMap: Record<string, React.ReactNode> = {
+            'loader': <Loader size={16} />,
+            'check-circle': <CheckCircle size={16} />,
+            'bell': <Bell size={16} />,
+            'sparkles': <Sparkles size={16} />,
+            'mouse-pointer-click': <MousePointerClick size={16} />,
+            'arrow-up': <ArrowUp size={16} />,
+            'maximize-2': <Maximize2 size={16} />,
+            'vibrate': <Vibrate size={16} />,
+        };
+        return iconMap[iconName] || null;
+    };
+
     return (
         <div className={`controls-panel ${isOpen ? 'panel-open' : ''}`}>
             {/* Header */}
@@ -170,6 +197,30 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                                 <p className="controls-empty-message">Upload an SVG to see layers</p>
                             )}
                         </motion.div>
+                    </div>
+
+                    {/* Quick Start - Smart Presets */}
+                    <div className="controls-section">
+                        <span className="controls-section-title">Quick Start</span>
+                        <div style={{ marginTop: '8px' }}>
+                            <Dropdown
+                                options={SMART_PRESETS.map(preset => ({
+                                    value: preset.id,
+                                    label: (
+                                        <div className="smart-preset-option">
+                                            <span className="smart-preset-icon">{getSmartPresetIcon(preset.icon)}</span>
+                                            <div className="smart-preset-text">
+                                                <span className="smart-preset-name">{preset.name}</span>
+                                                <span className="smart-preset-desc">{preset.description}</span>
+                                            </div>
+                                        </div>
+                                    )
+                                }))}
+                                value=""
+                                onChange={applySmartPreset}
+                                placeholder="Choose a recipe..."
+                            />
+                        </div>
                     </div>
 
                     {/* Preset Section - 3x2 Grid */}
