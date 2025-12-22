@@ -202,80 +202,6 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                         </div>
                     </div>
 
-                    {/* Appearance Section - Collapsible */}
-                    <div className="controls-section">
-                        <button
-                            className="controls-section-header"
-                            onClick={() => setAppearanceOpen(!appearanceOpen)}
-                        >
-                            <span className="controls-section-title">Appearance</span>
-                            <ChevronDown size={16} className={`section-chevron ${appearanceOpen ? 'open' : ''}`} />
-                        </button>
-                        <motion.div
-                            className="collapsible-content collapsible-content-appearance"
-                            initial={false}
-                            animate={{
-                                height: appearanceOpen ? 'auto' : 0,
-                                opacity: appearanceOpen ? 1 : 0,
-                                marginTop: appearanceOpen ? 12 : 0,
-                            }}
-                            transition={{
-                                height: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
-                                opacity: { duration: 0.15, ease: 'easeOut' },
-                                marginTop: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
-                            }}
-                        >
-                            {/* Override Toggle */}
-                            <div className="controls-field">
-                                <span className="controls-field-label">Override</span>
-                                <SegmentedControl
-                                    options={[{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }]}
-                                    value={settings.overrideColor ? 'yes' : 'no'}
-                                    onChange={(v) => updateSetting('overrideColor', v === 'yes')}
-                                    className="controls-toggle-wide"
-                                />
-                            </div>
-
-                            {/* Stroke Color */}
-                            {settings.overrideColor && (
-                                <div className="controls-field">
-                                    <span className="controls-field-label">Stroke color</span>
-                                    <div className="controls-color-input-inline">
-                                        <input type="color" className="controls-color-picker-inline" value={settings.strokeColor} onChange={(e) => updateSetting('strokeColor', e.target.value)} />
-                                        <input type="text" className="controls-color-text-inline" value={settings.strokeColor.toUpperCase()} onChange={(e) => updateSetting('strokeColor', e.target.value)} />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Stroke Width */}
-                            {settings.overrideColor && (
-                                <div className="controls-field">
-                                    <span className="controls-field-label">Stroke width</span>
-                                    <div className="controls-field-input-group">
-                                        <input type="text" className="controls-field-input controls-field-input-short" value={settings.strokeWidth} onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) updateSetting('strokeWidth', val); }} />
-                                        <Slider min={0.5} max={10} step={0.5} value={settings.strokeWidth} onChange={(val) => updateSetting('strokeWidth', val)} />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Line Cap */}
-                            <div className="controls-field">
-                                <span className="controls-field-label">Line cap</span>
-                                <div style={{ flex: 1 }}>
-                                    <Dropdown options={[{ label: 'Round', value: 'round' }, { label: 'Butt', value: 'butt' }, { label: 'Square', value: 'square' }]} value={settings.lineCap} onChange={(val) => updateSetting('lineCap', val as any)} />
-                                </div>
-                            </div>
-
-                            {/* Line Join */}
-                            <div className="controls-field">
-                                <span className="controls-field-label">Line join</span>
-                                <div style={{ flex: 1 }}>
-                                    <Dropdown options={[{ label: 'Round', value: 'round' }, { label: 'Bevel', value: 'bevel' }, { label: 'Miter', value: 'miter' }]} value={settings.lineJoin} onChange={(val) => updateSetting('lineJoin', val as any)} />
-                                </div>
-                            </div>
-                        </motion.div>
-                    </div>
-
                     {/* Animation Section */}
                     <div className="controls-section">
                         <div className="controls-section-title-row">
@@ -389,6 +315,80 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                                 </div>
                             </>
                         )}
+                    </div>
+
+                    {/* Appearance Section - Collapsible */}
+                    <div className="controls-section">
+                        <button
+                            className="controls-section-header"
+                            onClick={() => setAppearanceOpen(!appearanceOpen)}
+                        >
+                            <span className="controls-section-title">Appearance</span>
+                            <ChevronDown size={16} className={`section-chevron ${appearanceOpen ? 'open' : ''}`} />
+                        </button>
+                        <motion.div
+                            className="collapsible-content collapsible-content-appearance"
+                            initial={false}
+                            animate={{
+                                height: appearanceOpen ? 'auto' : 0,
+                                opacity: appearanceOpen ? 1 : 0,
+                                marginTop: appearanceOpen ? 12 : 0,
+                            }}
+                            transition={{
+                                height: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
+                                opacity: { duration: 0.15, ease: 'easeOut' },
+                                marginTop: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
+                            }}
+                        >
+                            {/* Override Toggle */}
+                            <div className="controls-field">
+                                <span className="controls-field-label">Override</span>
+                                <SegmentedControl
+                                    options={[{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }]}
+                                    value={settings.overrideColor ? 'yes' : 'no'}
+                                    onChange={(v) => updateSetting('overrideColor', v === 'yes')}
+                                    className="controls-toggle-wide"
+                                />
+                            </div>
+
+                            {/* Stroke Color */}
+                            {settings.overrideColor && (
+                                <div className="controls-field">
+                                    <span className="controls-field-label">Stroke color</span>
+                                    <div className="controls-color-input-inline">
+                                        <input type="color" className="controls-color-picker-inline" value={settings.strokeColor} onChange={(e) => updateSetting('strokeColor', e.target.value)} />
+                                        <input type="text" className="controls-color-text-inline" value={settings.strokeColor.toUpperCase()} onChange={(e) => updateSetting('strokeColor', e.target.value)} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Stroke Width */}
+                            {settings.overrideColor && (
+                                <div className="controls-field">
+                                    <span className="controls-field-label">Stroke width</span>
+                                    <div className="controls-field-input-group">
+                                        <input type="text" className="controls-field-input controls-field-input-short" value={settings.strokeWidth} onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) updateSetting('strokeWidth', val); }} />
+                                        <Slider min={0.5} max={10} step={0.5} value={settings.strokeWidth} onChange={(val) => updateSetting('strokeWidth', val)} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Line Cap */}
+                            <div className="controls-field">
+                                <span className="controls-field-label">Line cap</span>
+                                <div style={{ flex: 1 }}>
+                                    <Dropdown options={[{ label: 'Round', value: 'round' }, { label: 'Butt', value: 'butt' }, { label: 'Square', value: 'square' }]} value={settings.lineCap} onChange={(val) => updateSetting('lineCap', val as any)} />
+                                </div>
+                            </div>
+
+                            {/* Line Join */}
+                            <div className="controls-field">
+                                <span className="controls-field-label">Line join</span>
+                                <div style={{ flex: 1 }}>
+                                    <Dropdown options={[{ label: 'Round', value: 'round' }, { label: 'Bevel', value: 'bevel' }, { label: 'Miter', value: 'miter' }]} value={settings.lineJoin} onChange={(val) => updateSetting('lineJoin', val as any)} />
+                                </div>
+                            </div>
+                        </motion.div>
                     </div>
                 </motion.div>
             </div>
