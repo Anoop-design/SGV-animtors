@@ -288,7 +288,20 @@ export default function IconMotionEditor() {
   };
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+
+    // Check if View Transitions API is supported
+    // @ts-ignore - startViewTransition is not yet in TypeScript DOM types
+    if (!document.startViewTransition) {
+      setTheme(newTheme);
+      return;
+    }
+
+    // Use View Transitions API for smooth wipe animation
+    // @ts-ignore
+    document.startViewTransition(() => {
+      setTheme(newTheme);
+    });
   };
 
   /* Update animation properties for a specific path */

@@ -2150,14 +2150,13 @@
     box-shadow: 0px 1px 0px 0px var(--shadow-white);
     display: flex;
     flex-direction: column;
-    gap: 0px;
+
 }
 
 .controls-section:last-child {
     border-bottom: 1px solid var(--border-subtle);
     box-shadow: 0px 1px 0px 0px var(--shadow-white);
-    margin-bottom: 2px;
-    gap: 12px;
+
 }
 
 .controls-section:first-child {
@@ -3532,4 +3531,41 @@
 
 .export-code-content code {
     font-family: inherit;
+}
+
+/* =============================================================================
+   VIEW TRANSITIONS - Theme Switch Animation
+   Uses View Transitions API for smooth theme switching with top-down wipe
+   ============================================================================= */
+
+/* Old state: static, positioned behind */
+::view-transition-old(root) {
+    animation: none;
+    z-index: 1;
+}
+
+/* New state: wipes down from top */
+::view-transition-new(root) {
+    animation: theme-wipe-down 0.4s ease-out;
+    z-index: 2;
+}
+
+/* Top-down wipe reveal animation using clip-path */
+@keyframes theme-wipe-down {
+    from {
+        clip-path: inset(0 0 100% 0);
+    }
+
+    to {
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+/* Respect reduced motion preference for accessibility */
+@media (prefers-reduced-motion: reduce) {
+
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+        animation: none;
+    }
 }
