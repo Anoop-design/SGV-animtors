@@ -29,6 +29,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
     const dropdownRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     const selectedOption = options.find(opt => opt.value === value);
 
@@ -53,7 +54,12 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+            // Check if click is inside trigger container OR the portal menu
+            const isInsideTrigger = dropdownRef.current?.contains(target);
+            const isInsideMenu = menuRef.current?.contains(target);
+
+            if (!isInsideTrigger && !isInsideMenu) {
                 setIsOpen(false);
             }
         };
@@ -69,6 +75,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
     const menu = isOpen ? (
         <div
+            ref={menuRef}
             className="custom-dropdown-menu"
             style={{
                 position: 'fixed',
@@ -116,3 +123,4 @@ export const Dropdown: React.FC<DropdownProps> = ({
         </div>
     );
 };
+

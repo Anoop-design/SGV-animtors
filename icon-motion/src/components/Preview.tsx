@@ -867,6 +867,7 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                       } as React.CSSProperties}
                     >
                       {/* Animated Path - trigger-based animation */}
+                      {/* In unified mode, paths are static - only parent SVG animates */}
                       <motion.path
                         key={`${path.id}-${animationKey}`}
                         className="animating-path"
@@ -878,11 +879,10 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                         strokeLinecap={settings.lineCap}
                         strokeLinejoin={settings.lineJoin}
                         pathLength={1}
-                        variants={getPathVariants(recipe, index)}
-                        // Always start from idle so replay works from beginning
-                        // The animateState controls whether we're at idle or play
-                        initial="idle"
-                        animate={animateState}
+                        // Only animate paths in 'individual' mode
+                        variants={recipe.layerMode === 'individual' ? getPathVariants(recipe, index) : undefined}
+                        initial={recipe.layerMode === 'individual' ? 'idle' : undefined}
+                        animate={recipe.layerMode === 'individual' ? animateState : undefined}
                         style={{
                           transformOrigin: 'center',
                           transformBox: 'fill-box',
