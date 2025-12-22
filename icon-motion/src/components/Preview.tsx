@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useMemo, useState, forwardRef, useImperativeHandle } from 'react';
-import { ParsedSVG, AnimationSettings, AnimationRecipe, PresetType, DEFAULT_RECIPE, TriggerType } from '@/types';
+import { ParsedSVG, AnimationSettings, AnimationRecipe, PresetType, DEFAULT_RECIPE, TriggerType, StaggerType } from '@/types';
 import { RotateCcw, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import { Dropdown } from '@/components/ui/Dropdown';
 import { motion, Variants, Easing } from 'framer-motion';
@@ -9,6 +9,47 @@ import '@/styles.css';
 
 // Available icon sizes for the size dropdown
 const ICON_SIZES = [16, 24, 32, 48, 64, 96];
+
+// -----------------------------------------------------------------------------
+// calculateStaggerDelay - Calculates animation delay based on stagger pattern
+// Supports: none, by-index, by-index-reverse, from-center, random, by-size
+// -----------------------------------------------------------------------------
+
+function calculateStaggerDelay(
+  pathIndex: number,
+  totalPaths: number,
+  stagger: number,
+  staggerType: StaggerType
+): number {
+  if (totalPaths <= 1) return 0;
+
+  switch (staggerType) {
+    case 'none':
+      return 0;
+
+    case 'by-index':
+      return pathIndex * stagger;
+
+    case 'by-index-reverse':
+      return (totalPaths - 1 - pathIndex) * stagger;
+
+    case 'from-center':
+      const center = (totalPaths - 1) / 2;
+      return Math.abs(pathIndex - center) * stagger;
+
+    case 'random':
+      // Deterministic pseudo-random based on pathIndex (so it's consistent on re-renders)
+      const pseudoRandom = Math.abs(Math.sin(pathIndex * 12.9898 + 78.233) * 43758.5453) % 1;
+      return pseudoRandom * totalPaths * stagger;
+
+    case 'by-size':
+      // Would need path size info from parsedSVG - fallback to by-index for now
+      return pathIndex * stagger;
+
+    default:
+      return pathIndex * stagger;
+  }
+}
 
 // -----------------------------------------------------------------------------
 // getUnifiedVariants - Variants for animating entire SVG as one unit
@@ -145,9 +186,11 @@ function getUnifiedVariants(recipe: AnimationRecipe): Variants {
 
 function getPathVariants(
   recipe: AnimationRecipe,
-  pathIndex: number
+  pathIndex: number,
+  totalPaths: number
 ): Variants {
-  const delay = pathIndex * recipe.stagger;
+  // Calculate delay based on stagger pattern
+  const delay = calculateStaggerDelay(pathIndex, totalPaths, recipe.stagger, recipe.staggerType);
   const transition = recipe.transition;
   const intensity = recipe.intensity ?? 0.5;
 
@@ -880,7 +923,7 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                         strokeLinejoin={settings.lineJoin}
                         pathLength={1}
                         // Only animate paths in 'individual' mode
-                        variants={recipe.layerMode === 'individual' ? getPathVariants(recipe, index) : undefined}
+                        variants={recipe.layerMode === 'individual' ? getPathVariants(recipe, index, parsedSVG.paths.length) : undefined}
                         initial={recipe.layerMode === 'individual' ? 'idle' : undefined}
                         animate={recipe.layerMode === 'individual' ? animateState : undefined}
                         style={{
