@@ -11,6 +11,131 @@ import '@/styles.css';
 const ICON_SIZES = [16, 24, 32, 48, 64, 96];
 
 // -----------------------------------------------------------------------------
+// getUnifiedVariants - Variants for animating entire SVG as one unit
+// Used when layerMode is 'unified' - applies animation to parent SVG element
+// -----------------------------------------------------------------------------
+
+function getUnifiedVariants(recipe: AnimationRecipe): Variants {
+  const transition = recipe.transition;
+  const intensity = recipe.intensity ?? 0.5;
+
+  const baseTweenTransition = {
+    duration: transition?.duration ?? recipe.duration,
+    ease: (transition?.ease ?? recipe.easing) as Easing,
+    delay: transition?.delay || 0,
+  };
+
+  switch (recipe.preset) {
+    case 'spin':
+      // Spin: rotate entire icon
+      return {
+        idle: { rotate: 0, opacity: 1 },
+        play: {
+          rotate: 360,
+          opacity: 1,
+          transition: {
+            rotate: { duration: transition?.duration ?? recipe.duration, ease: 'linear', repeat: recipe.loop ? Infinity : 0 },
+          },
+        },
+        hover: {
+          rotate: 360,
+          opacity: 1,
+          transition: { duration: (transition?.duration ?? recipe.duration) * 0.8, ease: 'linear' },
+        },
+      };
+
+    case 'wiggle':
+      // Wiggle: shake entire icon
+      const angle = 15 * intensity;
+      return {
+        idle: { rotate: 0, opacity: 1 },
+        play: {
+          rotate: [0, -angle, angle, -angle, 0],
+          opacity: 1,
+          transition: baseTweenTransition,
+        },
+        hover: {
+          rotate: [0, -angle, angle, -angle, 0],
+          opacity: 1,
+          transition: baseTweenTransition,
+        },
+      };
+
+    case 'bounce':
+      // Bounce: bounce entire icon
+      const bounceY = 20 * intensity;
+      const overshoot = -8 * intensity;
+      const settle = 3 * intensity;
+      return {
+        idle: { y: bounceY, opacity: 1 },
+        play: {
+          y: [bounceY, overshoot, settle, 0],
+          opacity: 1,
+          transition: {
+            duration: transition?.duration ?? recipe.duration,
+            ease: [0.22, 1.0, 0.36, 1.0],
+          },
+        },
+        hover: {
+          y: [0, overshoot, settle, 0],
+          opacity: 1,
+          transition: {
+            duration: (transition?.duration ?? recipe.duration) * 0.6,
+            ease: [0.22, 1.0, 0.36, 1.0],
+          },
+        },
+      };
+
+    case 'pop':
+      // Pop: scale entire icon
+      return {
+        idle: { scale: 0, opacity: 0 },
+        play: {
+          scale: 1,
+          opacity: 1,
+          transition: baseTweenTransition,
+        },
+        hover: {
+          scale: [1, 1 + (0.2 * intensity), 1],
+          opacity: 1,
+          transition: baseTweenTransition,
+        },
+      };
+
+    case 'pulse':
+      // Pulse: heartbeat on entire icon
+      return {
+        idle: { scale: 1, opacity: 1 },
+        play: {
+          scale: [1, 1.15, 1, 1.1, 1],
+          opacity: 1,
+          transition: {
+            duration: transition?.duration ?? recipe.duration,
+            ease: 'easeInOut',
+            repeat: recipe.loop ? Infinity : 0,
+          },
+        },
+        hover: {
+          scale: [1, 1.15, 1, 1.1, 1],
+          opacity: 1,
+          transition: {
+            duration: (transition?.duration ?? recipe.duration) * 0.8,
+            ease: 'easeInOut',
+          },
+        },
+      };
+
+    default:
+      // For other presets, no unified animation (use individual)
+      return {
+        idle: { opacity: 1 },
+        play: { opacity: 1 },
+        hover: { opacity: 1 },
+      };
+  }
+}
+
+// -----------------------------------------------------------------------------
 // getPathVariants - Generates Framer Motion variants based on recipe preset
 // Per new-presets.md architecture: Draw (pathLength), Pop (scale), Wiggle (rotate)
 // Now includes 'hover' variant for hover trigger animations
@@ -115,33 +240,30 @@ function getPathVariants(
       };
 
     case 'bounce':
-      // Bounce: spring up from below
-      const bounceY = 20 * intensity;  // Y offset scaled by intensity
+      // Bounce: true bounce with overshoot and settle
+      const bounceY = 20 * intensity;  // Start Y offset scaled by intensity
+      const overshoot = -8 * intensity;  // Overshoot amount (goes above target)
+      const settle = 3 * intensity;  // Settle amount
       return {
         idle: {
-          scale: 1 - (0.4 * intensity),
           y: bounceY,
-          opacity: 0
+          opacity: 1,  // Always visible
         },
         play: {
-          scale: 1,
-          y: 0,
+          y: [bounceY, overshoot, settle, 0],  // Start → overshoot → settle → rest
           opacity: 1,
-          transition: transition?.type === 'spring' ? buildTransition() : {
-            type: 'spring',
-            stiffness: transition?.stiffness ?? 300,
-            damping: transition?.damping ?? 10,
+          transition: {
+            duration: transition?.duration ?? recipe.duration,
+            ease: [0.22, 1.0, 0.36, 1.0],  // Custom ease for bounce feel
             delay: delay + (transition?.delay || 0),
           },
         },
         hover: {
-          y: [0, -16 * intensity, 0],  // Bounce height scaled by intensity
-          scale: 1,
+          y: [0, overshoot, settle, 0],  // Bounce from rest position
           opacity: 1,
           transition: {
-            // Use tween for keyframe arrays (spring only supports 2 frames)
             duration: (transition?.duration ?? recipe.duration) * 0.6,
-            ease: 'easeInOut',
+            ease: [0.22, 1.0, 0.36, 1.0],
             delay,
           },
         },
@@ -174,19 +296,95 @@ function getPathVariants(
         },
       };
 
-    case 'none':
-      // None: no animation, just visible
+    case 'fade':
+      // Fade: simple opacity fade in
       return {
-        idle: { opacity: 1 },
-        play: { opacity: 1 },
-        hover: { opacity: 1 },
+        idle: { opacity: 0 },
+        play: {
+          opacity: 1,
+          transition: baseTweenTransition,
+        },
+        hover: {
+          opacity: [1, 0.5, 1],
+          transition: baseTweenTransition,
+        },
+      };
+
+    case 'slide':
+      // Slide: slide up (no opacity fade)
+      const slideY = 15 * intensity;
+      return {
+        idle: {
+          y: slideY,
+          opacity: 1,  // Always visible
+        },
+        play: {
+          y: 0,
+          opacity: 1,
+          transition: baseTweenTransition,
+        },
+        hover: {
+          y: [0, -5 * intensity, 0],
+          opacity: 1,
+          transition: baseTweenTransition,
+        },
+      };
+
+    case 'spin':
+      // Spin: rotate 360 degrees
+      return {
+        idle: {
+          rotate: 0,
+          opacity: 0,
+        },
+        play: {
+          rotate: 360,
+          opacity: 1,
+          transition: {
+            rotate: { duration: transition?.duration ?? recipe.duration, ease: 'easeInOut', delay: delay + (transition?.delay || 0) },
+            opacity: { duration: 0.2, delay: delay + (transition?.delay || 0) },
+          },
+        },
+        hover: {
+          rotate: [0, 360],
+          opacity: 1,
+          transition: { duration: (transition?.duration ?? recipe.duration) * 0.8, ease: 'easeInOut', delay },
+        },
+      };
+
+    case 'pulse':
+      // Pulse: heartbeat-like scale animation
+      return {
+        idle: {
+          scale: 1,
+          opacity: 1,
+        },
+        play: {
+          scale: [1, 1.15, 1, 1.1, 1],
+          opacity: 1,
+          transition: {
+            duration: transition?.duration ?? recipe.duration,
+            ease: 'easeInOut',
+            delay: delay + (transition?.delay || 0),
+            repeat: recipe.loop ? Infinity : 0,
+          },
+        },
+        hover: {
+          scale: [1, 1.15, 1, 1.1, 1],
+          opacity: 1,
+          transition: {
+            duration: (transition?.duration ?? recipe.duration) * 0.8,
+            ease: 'easeInOut',
+            delay,
+          },
+        },
       };
 
     default:
-      // Default: just visible
+      // Default: fade in fallback
       return {
-        idle: { opacity: 1 },
-        play: { opacity: 1 },
+        idle: { opacity: 0 },
+        play: { opacity: 1, transition: baseTweenTransition },
         hover: { opacity: 1 },
       };
   }
@@ -377,9 +575,9 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '6px',
+              padding: '10px ',
               border: '1px solid var(--border-default)',
-              borderRadius: '6px',
+              borderRadius: '8px',
               background: 'var(--bg-button)',
               color: 'var(--text-primary)',
               cursor: 'pointer',
@@ -553,6 +751,7 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
           // Appear: Active -> Default (Wait, "Appear" usually means entering viewport. Let's assume on load for now).
           >
             <motion.svg
+              key={recipe.layerMode === 'unified' ? animationKey : undefined}
               viewBox={parsedSVG.viewBox}
               className="preview-svg"
               style={{
@@ -561,10 +760,15 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                 height: `${selectedSize}px`,
                 overflow: 'visible', // Allow transforms to go outside
                 cursor: recipe.trigger !== 'auto' ? 'pointer' : 'default',
+                transformOrigin: 'center',
               }}
               // TRIGGER HANDLERS ON SVG LEVEL (whole viewbox)
               onHoverStart={recipe.trigger === 'hover' ? handleReplay : undefined}
               onClick={recipe.trigger === 'click' ? handleClickTrigger : undefined}
+              // Apply unified variants when layerMode is 'unified'
+              variants={recipe.layerMode === 'unified' ? getUnifiedVariants(recipe) : undefined}
+              initial={recipe.layerMode === 'unified' ? 'idle' : undefined}
+              animate={recipe.layerMode === 'unified' ? animateState : undefined}
             >
               {parsedSVG.paths.map((path, index) => {
                 if (!path.visible) return null;

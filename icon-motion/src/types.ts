@@ -166,7 +166,7 @@ export interface TransformPreset {
 // Separates Configuration (Recipe) from Implementation (Variants)
 // -----------------------------------------------------------------------------
 
-export type PresetType = 'none' | 'draw' | 'pop' | 'wiggle' | 'bounce' | 'draw-pop';
+export type PresetType = 'draw' | 'pop' | 'wiggle' | 'bounce' | 'draw-pop' | 'fade' | 'slide' | 'spin' | 'pulse';
 
 // Transition configuration for detailed ease/spring settings
 export interface RecipeTransition {
@@ -195,6 +195,8 @@ export interface AnimationRecipe {
   preset: PresetType;
   intensity: number;     // Multiplier for effect strength (0-1, default: 0.5)
   stagger: number;       // Delay between each path animating (seconds)
+  staggerType: StaggerType;  // How paths are ordered for stagger
+  layerMode: LayerMode;  // How layers animate: individual or unified
   transition: RecipeTransition;  // Detailed transition settings
   loop: boolean;         // Whether animation repeats
   trigger: TriggerType;  // When animation triggers
@@ -203,10 +205,18 @@ export interface AnimationRecipe {
   easing: EasingType;    // Shortcut to transition.ease
 }
 
+// How layers animate
+export type LayerMode = 'individual' | 'unified';
+
+// Stagger type determines order of path animation
+export type StaggerType = 'none' | 'by-index' | 'by-index-reverse' | 'by-size' | 'from-center' | 'random';
+
 export const DEFAULT_RECIPE: AnimationRecipe = {
   preset: 'draw',
   intensity: 0.5,
-  stagger: 0.15,
+  stagger: 0.1,
+  staggerType: 'by-index',
+  layerMode: 'individual',
   transition: DEFAULT_RECIPE_TRANSITION,
   loop: false,
   trigger: 'auto',
@@ -215,14 +225,17 @@ export const DEFAULT_RECIPE: AnimationRecipe = {
   easing: 'easeOut',
 };
 
-// Preset metadata for UI display - 3x2 grid order
+// Preset metadata for UI display - grid layout
 export const PRESET_OPTIONS: { value: PresetType; label: string; description: string; icon: string }[] = [
-  { value: 'none', label: 'None', description: 'No animation', icon: 'ban' },
   { value: 'draw', label: 'Draw', description: 'Stroke draws on progressively', icon: 'pencil' },
-  { value: 'pop', label: 'Pop', description: 'Scale up with fade', icon: 'zap' },
+  { value: 'pop', label: 'Pop', description: 'Scale up with overshoot', icon: 'zap' },
   { value: 'wiggle', label: 'Wiggle', description: 'Shake left and right', icon: 'activity' },
-  { value: 'bounce', label: 'Bounce', description: 'Spring up with bounce', icon: 'arrow-up-down' },
+  { value: 'bounce', label: 'Bounce', description: 'Spring up from below', icon: 'arrow-up-down' },
   { value: 'draw-pop', label: 'Draw+Pop', description: 'Draw then pop in', icon: 'sparkles' },
+  { value: 'fade', label: 'Fade', description: 'Fade in smoothly', icon: 'eye' },
+  { value: 'slide', label: 'Slide', description: 'Slide up with fade', icon: 'arrow-up' },
+  { value: 'spin', label: 'Spin', description: 'Rotate 360 degrees', icon: 'loader' },
+  { value: 'pulse', label: 'Pulse', description: 'Pulsing heartbeat effect', icon: 'heart' },
 ];
 
 

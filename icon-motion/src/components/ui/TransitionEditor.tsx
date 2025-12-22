@@ -238,20 +238,26 @@ export const TransitionEditor: React.FC<TransitionEditorProps> = ({
 
     // Use portal to render outside parent overflow constraints
     const dropdown = (
-        <div
+        <motion.div
             ref={dropdownRef}
             className="transition-editor-dropdown"
+            drag
+            dragMomentum={false}
+            dragElastic={0}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
             style={{
                 position: 'fixed',
                 top: position.top,
                 left: position.left,
+                cursor: 'grab',
             }}
+            whileDrag={{ cursor: 'grabbing' }}
         >
-            {/* Header */}
-            <div className="transition-editor-header">
-                <button className="transition-editor-back" onClick={onClose}>
-                    <ChevronLeft size={18} />
-                </button>
+            {/* Header - Drag Handle */}
+            <div className="transition-editor-header" style={{ cursor: 'grab' }}>
                 <span className="transition-editor-title">Transition</span>
                 <button className="transition-editor-close" onClick={onClose}>
                     <X size={16} />
@@ -442,7 +448,7 @@ export const TransitionEditor: React.FC<TransitionEditorProps> = ({
                     />
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 
     // Render with portal to escape parent overflow

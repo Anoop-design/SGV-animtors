@@ -6,6 +6,8 @@ import {
     AnimationSettings,
     ParsedPath,
     StaggerMode,
+    StaggerType,
+    LayerMode,
     TriggerType,
     PRESET_OPTIONS,
     PresetType,
@@ -172,7 +174,7 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
 
                     {/* Preset Section - 3x2 Grid */}
                     <div className="controls-section">
-                        <span className="controls-section-title">Entrance Preset</span>
+                        <span className="controls-section-title">Effects</span>
                         <div className="preset-grid">
                             {PRESET_OPTIONS.map((preset) => {
                                 const isSelected = recipe.preset === preset.value;
@@ -333,39 +335,60 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                             </div>
                         </div>
 
-                        {/* Stagger Slider */}
+                        {/* Layer Mode Dropdown */}
                         <div className="controls-field">
-                            <span className="controls-field-label">Stagger</span>
-                            <div className="controls-field-input-group">
-                                <NumberInput
-                                    value={recipe.stagger}
-                                    onChange={(val) => updateRecipe('stagger', val)}
-                                    min={0} max={1} step={0.05} unit="s"
-                                />
-                                <Slider
-                                    min={0} max={0.5} step={0.05}
-                                    value={recipe.stagger}
-                                    onChange={(val) => updateRecipe('stagger', val)}
+                            <span className="controls-field-label">Layer Mode</span>
+                            <div style={{ flex: 1 }}>
+                                <Dropdown
+                                    options={[
+                                        { label: 'Individual', value: 'individual' },
+                                        { label: 'Unified', value: 'unified' },
+                                    ]}
+                                    value={recipe.layerMode}
+                                    onChange={(val) => updateRecipe('layerMode', val as LayerMode)}
                                 />
                             </div>
                         </div>
 
-                        {/* Stagger Pattern */}
-                        <div className="controls-field">
-                            <span className="controls-field-label">Pattern</span>
-                            <div style={{ flex: 1 }}>
-                                <Dropdown
-                                    options={[
-                                        { label: 'Forward', value: 'forward' },
-                                        { label: 'Reverse', value: 'reverse' },
-                                        { label: 'From Center', value: 'from-center' },
-                                        { label: 'Random', value: 'random' },
-                                    ]}
-                                    value={settings.staggerMode === 'none' ? 'forward' : settings.staggerMode}
-                                    onChange={(val) => updateSetting('staggerMode', val as StaggerMode)}
-                                />
-                            </div>
-                        </div>
+                        {/* Stagger Slider (only for individual mode) */}
+                        {recipe.layerMode === 'individual' && (
+                            <>
+                                <div className="controls-field">
+                                    <span className="controls-field-label">Stagger</span>
+                                    <div className="controls-field-input-group">
+                                        <NumberInput
+                                            value={recipe.stagger}
+                                            onChange={(val) => updateRecipe('stagger', val)}
+                                            min={0} max={1} step={0.05} unit="s"
+                                        />
+                                        <Slider
+                                            min={0} max={0.5} step={0.05}
+                                            value={recipe.stagger}
+                                            onChange={(val) => updateRecipe('stagger', val)}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Stagger Type */}
+                                <div className="controls-field">
+                                    <span className="controls-field-label">Pattern</span>
+                                    <div style={{ flex: 1 }}>
+                                        <Dropdown
+                                            options={[
+                                                { label: 'None', value: 'none' },
+                                                { label: 'By Index', value: 'by-index' },
+                                                { label: 'By Index (Reverse)', value: 'by-index-reverse' },
+                                                { label: 'By Size', value: 'by-size' },
+                                                { label: 'From Center', value: 'from-center' },
+                                                { label: 'Random', value: 'random' },
+                                            ]}
+                                            value={recipe.staggerType}
+                                            onChange={(val) => updateRecipe('staggerType', val as StaggerType)}
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </motion.div>
             </div>

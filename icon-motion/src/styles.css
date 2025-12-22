@@ -2101,7 +2101,8 @@
     border: 1px solid var(--border-default);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
+    /* Changed from hidden to allow dropdowns to overflow */
     flex-shrink: 0;
 }
 
