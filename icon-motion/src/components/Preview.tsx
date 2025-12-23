@@ -930,7 +930,10 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                           // Animation properties removed - now using Framer Motion variants
                           // Legacy CSS animation code removed
                           transformOrigin: 'center',
-                          transformBox: 'fill-box'
+                          transformBox: 'fill-box',
+                          // Layer highlight: reduce opacity of non-hovered paths
+                          opacity: hoveredPathIndex !== null && hoveredPathIndex !== index ? 0.2 : 1,
+                          transition: 'opacity 0.15s ease',
                         } as React.CSSProperties}
                       >
                         {/* Animated Path - trigger-based animation */}
