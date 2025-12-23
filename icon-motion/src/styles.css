@@ -3487,33 +3487,115 @@
 
 .export-code-filename {
     font-size: 12px;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
     color: var(--text-secondary);
 }
 
+/* =============================================================================
+   ACTION BUTTONS - Export and Copy buttons in code panel header
+   
+   Matches the design of .header-btn-export with outer wrapper and inner frame.
+   ============================================================================= */
+
+/* Action buttons container - horizontal row of buttons */
 .export-code-actions {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
+/* Action button outer wrapper - matches .header-btn-export */
 .export-action-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-primary);
+    height: 31px;
+    /* Same height as header export button */
+    padding: 2px;
+    /* Outer padding for wrapper */
     background-color: var(--bg-button);
-    border: 1px solid var(--border-default);
-    border-radius: 6px;
+    /* Outer background */
+    border-radius: 8px;
+    /* Outer border radius */
+    border: none;
+    /* No outer border */
+    overflow: hidden;
     cursor: pointer;
-    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.15s ease;
 }
 
+/* Hover state for outer wrapper */
 .export-action-btn:hover {
     background-color: var(--bg-button-hover);
+}
+
+/* Active/pressed state */
+.export-action-btn:active {
+    transform: scale(0.98);
+}
+
+/* Inner frame inside action button - matches .header-btn-export-inner */
+.export-action-btn>span,
+.export-action-btn>motion\.span {
+    height: 27px;
+    /* Inner frame height */
+    padding: 6px 10px;
+    /* Inner padding */
+    background-color: var(--btn-inner-bg);
+    /* Inner background */
+    border: 1px solid var(--btn-inner-border);
+    /* Inner border */
+    border-radius: 6px;
+    /* Inner border radius */
+    display: inline-flex;
+    /* Horizontal layout for icon + text */
+    align-items: center;
+    gap: 6px;
+    /* Space between icon and text */
+    box-shadow: var(--btn-inner-shadow);
+    /* Inner shadow */
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+/* Icon styling inside button */
+.export-action-btn svg {
+    width: 13px;
+    height: 13px;
+    color: var(--text-primary);
+}
+
+/* =============================================================================
+   COPY BUTTON - Icon-only with animated icon swap
+   ============================================================================= */
+
+/* Wrapper for the animated icon - provides stable button size */
+.export-copy-icon-wrapper {
+    height: 27px;
+    /* Match inner frame height */
+    width: 27px;
+    /* Square for icon-only button */
+    padding: 0;
+    background-color: var(--btn-inner-bg);
+    /* Inner background */
+    border: 1px solid var(--btn-inner-border);
+    /* Inner border */
+    border-radius: 6px;
+    /* Inner border radius */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--btn-inner-shadow);
+    /* Inner shadow */
+}
+
+/* Animated icon container - centered */
+.export-copy-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .export-code-content {
@@ -3573,13 +3655,14 @@
     /* Horizontal layout */
     position: relative;
     /* For absolute positioned indicator */
-    margin: 0 20px 20px;
+    margin: 20px;
     /* Spacing around tabs (left, right, bottom) */
     padding: 3px;
     /* Inner padding for the pill container */
     background-color: var(--bg-button);
     /* Background color of the container */
     border-radius: 12px;
+
     /* Rounded corners */
     /* Inner shadow for depth - creates inset effect */
     box-shadow:
@@ -3740,59 +3823,82 @@
     border-radius: 12px;
     /* Rounded corners */
     /* Dotted grid background pattern */
-    background-color: var(--bg-main);
+    background-color: var(--btn-inner-bg);
     background-image:
         radial-gradient(circle, var(--border-default) 1px, transparent 1px);
     background-size: 20px 20px;
     /* Grid spacing */
 }
 
-/* Floating Replay Button - positioned in top-right corner */
+/* =============================================================================
+   FLOATING REPLAY BUTTON - Positioned in top-right corner of preview
+   
+   Matches the design of .header-btn-export with outer wrapper and inner frame.
+   ============================================================================= */
+
+/* Replay button outer wrapper - matches .header-btn-export */
 .export-replay-floating {
     position: absolute;
-    /* Float above content */
-    top: 16px;
-    /* Distance from top */
-    right: 16px;
-    /* Distance from right */
-    display: flex;
-    /* Horizontal layout */
+    top: 12px;
+    right: 12px;
+    height: 31px;
+    /* Same height as header export button */
+    padding: 2px;
+    /* Outer padding for wrapper */
+    background-color: var(--bg-button);
+    /* Outer background */
+    border-radius: 8px;
+    /* Outer border radius */
+    border: none;
+    /* No outer border */
+    overflow: hidden;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.15s ease;
+    z-index: 10;
+}
+
+/* Hover state for outer wrapper */
+.export-replay-floating:hover {
+    background-color: var(--bg-button-hover);
+}
+
+/* Active/pressed state */
+.export-replay-floating:active {
+    transform: scale(0.98);
+}
+
+/* Inner frame inside replay button - matches .header-btn-export-inner */
+.export-replay-floating>span {
+    height: 27px;
+    /* Inner frame height */
+    padding: 6px 10px;
+    /* Inner padding */
+    background-color: var(--btn-inner-bg);
+    /* Inner background */
+    border: 1px solid var(--btn-inner-border);
+    /* Inner border */
+    border-radius: 6px;
+    /* Inner border radius */
+    display: inline-flex;
+    /* Horizontal layout for icon + text */
     align-items: center;
     gap: 6px;
     /* Space between icon and text */
-    padding: 8px 14px;
-    /* Button padding */
+    box-shadow: var(--btn-inner-shadow);
+    /* Inner shadow */
     font-size: 12px;
-    /* Text size */
-    font-weight: 500;
-    /* Medium weight */
-    color: var(--text-secondary);
-    /* Muted color */
-    background-color: var(--bg-card);
-    /* Card background */
-    border: 1px solid var(--border-default);
-    /* Subtle border */
-    border-radius: 8px;
-    /* Rounded corners */
-    cursor: pointer;
-    transition: all 0.15s ease;
-    /* Smooth transition */
-    z-index: 10;
-    /* Above preview content */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    /* Subtle shadow */
+    font-weight: 400;
+    color: var(--text-primary);
+    white-space: nowrap;
 }
 
-/* Replay button hover state */
-.export-replay-floating:hover {
+/* Icon styling inside replay button */
+.export-replay-floating svg {
+    width: 13px;
+    height: 13px;
     color: var(--text-primary);
-    /* Brighter text */
-    background-color: var(--bg-button-hover);
-    /* Hover background */
-    border-color: var(--accent-color);
-    /* Accent border */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    /* Deeper shadow */
 }
 
 /* Preview canvas - centers the animated icon */
@@ -3828,17 +3934,10 @@
     /* Vertical layout */
     flex-direction: column;
     min-height: 0;
-    /* Allow shrinking */
     overflow: hidden;
-    /* Hide overflow */
-    background-color: var(--bg-card);
-    /* Card background */
     border: 1px solid var(--border-default);
-    /* Border for separation */
+    background: transparent !important;
     border-radius: 12px;
-    /* Rounded corners */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    /* Subtle shadow */
 }
 
 /* Code panel header - contains filename and action buttons */
@@ -3854,9 +3953,10 @@
     /* Filename left, actions right */
     padding: 0 16px;
     /* Horizontal padding */
+    background: transparent !important;
     border-bottom: 1px solid var(--border-default);
     /* Separator line */
-    background-color: var(--bg-input);
+
     /* Slightly different background */
 }
 
@@ -3872,49 +3972,7 @@
     /* Monospace font */
 }
 
-/* Action buttons container */
-.export-code-actions {
-    display: flex;
-    /* Horizontal layout */
-    gap: 8px;
-    /* Space between buttons */
-}
 
-/* Action button (Export/Copy) */
-.export-action-btn {
-    display: flex;
-    /* Horizontal layout */
-    align-items: center;
-    gap: 6px;
-    /* Space between icon and text */
-    padding: 8px 14px;
-    /* Button padding */
-    font-size: 12px;
-    /* Text size */
-    font-weight: 500;
-    /* Medium weight */
-    color: var(--text-secondary);
-    /* Muted color */
-    background-color: var(--bg-button);
-    /* Button background */
-    border: 1px solid var(--border-default);
-    /* Border */
-    border-radius: 8px;
-    /* Rounded corners */
-    cursor: pointer;
-    transition: all 0.15s ease;
-    /* Smooth transition */
-}
-
-/* Action button hover state */
-.export-action-btn:hover {
-    color: var(--text-primary);
-    /* Brighter text */
-    background-color: var(--bg-button-hover);
-    /* Hover background */
-    border-color: var(--border-input-focus);
-    /* Focus border */
-}
 
 /* Code content area - scrollable with hidden scrollbar */
 .export-code-panel .export-code-content {
@@ -3925,6 +3983,8 @@
     padding: 16px;
     /* Content padding */
     font-size: 12px;
+    background: transparent !important;
+    font-family: 'IBM Plex Mono', monospace;
     /* Code font size */
     line-height: 1.6;
     /* Line height for readability */

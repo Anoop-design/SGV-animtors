@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Copy, Check, Download, RotateCcw } from 'lucide-react';
+import { X, Copy, CircleCheck, Download, RotateCcw } from 'lucide-react';
 import { ParsedSVG, AnimationSettings, AnimationRecipe, DEFAULT_RECIPE, PresetType } from '@/types';
 import { generateExport, generateProExport, ExportType } from '@/lib/generate-export';
 import '@/styles.css';
@@ -285,8 +285,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                                     onClick={handleReplay}
                                     title="Replay animation (R)"
                                 >
-                                    <RotateCcw size={14} />
-                                    Replay
+                                    <span>
+                                        <RotateCcw size={13} />
+                                        Replay
+                                    </span>
                                 </button>
 
                                 {/* Animated Icon Preview */}
@@ -338,38 +340,43 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                                             onClick={handleDownload}
                                             title="Download file"
                                         >
-                                            <Download size={14} />
-                                            Export
+                                            <span>
+                                                <Download size={13} />
+                                                Export
+                                            </span>
                                         </button>
                                         <button
                                             className={`export-action-btn ${copied ? 'copied' : ''}`}
                                             onClick={handleCopy}
                                             title="Copy to clipboard"
                                         >
-                                            <AnimatePresence mode="wait">
-                                                {copied ? (
-                                                    <motion.span
-                                                        key="check"
-                                                        initial={{ scale: 0 }}
-                                                        animate={{ scale: 1 }}
-                                                        exit={{ scale: 0 }}
-                                                        className="export-copy-success"
-                                                    >
-                                                        <Check size={14} />
-                                                        Copied!
-                                                    </motion.span>
-                                                ) : (
-                                                    <motion.span
-                                                        key="copy"
-                                                        initial={{ scale: 0 }}
-                                                        animate={{ scale: 1 }}
-                                                        exit={{ scale: 0 }}
-                                                    >
-                                                        <Copy size={14} />
-                                                        Copy
-                                                    </motion.span>
-                                                )}
-                                            </AnimatePresence>
+                                            <span className="export-copy-icon-wrapper">
+                                                <AnimatePresence mode="wait">
+                                                    {copied ? (
+                                                        <motion.div
+                                                            key="check"
+                                                            initial={{ scale: 0, rotate: -180 }}
+                                                            animate={{ scale: 1, rotate: 0 }}
+                                                            exit={{ scale: 0, rotate: 180 }}
+                                                            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                                                            className="export-copy-icon"
+                                                        >
+                                                            <CircleCheck size={20} />
+                                                        </motion.div>
+                                                    ) : (
+                                                        <motion.div
+                                                            key="copy"
+                                                            initial={{ scale: 0.8, opacity: 0 }}
+                                                            animate={{ scale: 1, opacity: 1 }}
+                                                            exit={{ scale: 0.8, opacity: 0 }}
+                                                            transition={{ duration: 0.15 }}
+                                                            className="export-copy-icon"
+                                                        >
+                                                            <Copy size={15} />
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </span>
                                         </button>
                                     </div>
                                 </div>
