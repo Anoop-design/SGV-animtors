@@ -203,30 +203,6 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                         </motion.div>
                     </div>
 
-                    {/* Quick Start - Smart Presets */}
-                    <div className="controls-section">
-                        <span className="controls-section-title">Quick Start</span>
-                        <div style={{ marginTop: '8px' }}>
-                            <Dropdown
-                                options={SMART_PRESETS.map(preset => ({
-                                    value: preset.id,
-                                    label: (
-                                        <div className="smart-preset-option">
-                                            <span className="smart-preset-icon">{getSmartPresetIcon(preset.icon)}</span>
-                                            <div className="smart-preset-text">
-                                                <span className="smart-preset-name">{preset.name}</span>
-                                                <span className="smart-preset-desc">{preset.description}</span>
-                                            </div>
-                                        </div>
-                                    )
-                                }))}
-                                value={selectedSmartPreset || ''}
-                                onChange={applySmartPreset}
-                                placeholder="Choose a recipe..."
-                                displayValue={selectedSmartPreset ? SMART_PRESETS.find(p => p.id === selectedSmartPreset)?.name : undefined}
-                            />
-                        </div>
-                    </div>
 
                     {/* Preset Section - 3x2 Grid */}
                     <div className="controls-section">

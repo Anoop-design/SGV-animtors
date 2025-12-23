@@ -166,7 +166,7 @@ export interface TransformPreset {
 // Separates Configuration (Recipe) from Implementation (Variants)
 // -----------------------------------------------------------------------------
 
-export type PresetType = 'draw' | 'pop' | 'wiggle' | 'bounce' | 'draw-pop' | 'fade' | 'slide' | 'spin' | 'pulse';
+export type PresetType = 'draw' | 'pop' | 'wiggle' | 'bounce' | 'draw-pop' | 'fade' | 'slide' | 'spin' | 'pulse' | 'panel';
 
 // Transition configuration for detailed ease/spring settings
 export interface RecipeTransition {
@@ -236,6 +236,7 @@ export const PRESET_OPTIONS: { value: PresetType; label: string; description: st
   { value: 'slide', label: 'Slide', description: 'Slide up with fade', icon: 'arrow-up' },
   { value: 'spin', label: 'Spin', description: 'Rotate 360 degrees', icon: 'loader' },
   { value: 'pulse', label: 'Pulse', description: 'Pulsing heartbeat effect', icon: 'heart' },
+  { value: 'panel', label: 'Panel', description: 'Sidebar panel toggle morph', icon: 'panel-right' },
 ];
 
 // -----------------------------------------------------------------------------

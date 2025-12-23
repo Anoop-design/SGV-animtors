@@ -417,6 +417,11 @@ export default function IconMotionEditor() {
           warnings={parsedSVG.warnings}
           isOpen={leftPanelOpen}
           onClose={() => setLeftPanelOpen(false)}
+          onQuickStart={(svg, preset, trigger) => {
+            setSvgInput(svg);
+            updateRecipe('preset', preset);
+            updateRecipe('trigger', trigger);
+          }}
         />
 
         {/* Center - Preview Area */}

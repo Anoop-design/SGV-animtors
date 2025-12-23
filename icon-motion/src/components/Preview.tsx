@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useMemo, useState, forwardRef, useImperativeH
 import { ParsedSVG, AnimationSettings, AnimationRecipe, PresetType, DEFAULT_RECIPE, TriggerType, StaggerType } from '@/types';
 import { RotateCcw, ZoomIn, ZoomOut, Maximize } from 'lucide-react';
 import { Dropdown } from '@/components/ui/Dropdown';
+import { PanelMorphIcon } from '@/components/icons/PanelMorphIcon';
 import { motion, Variants, Easing } from 'framer-motion';
 import '@/styles.css';
 
@@ -488,6 +489,7 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
   // Animation state
   const [animationKey, setAnimationKey] = useState(() => Date.now()); // Unique key for remount
   const [animateState, setAnimateState] = useState<'idle' | 'play'>('play'); // For controlling animation
+  const [isMorphExpanded, setIsMorphExpanded] = useState(false); // For panel morph animation
 
   // New: Selected size for the size strip (larger default)
   const [selectedSize, setSelectedSize] = useState(96);
@@ -793,149 +795,172 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
           // Hover/Click: Default -> Active
           // Appear: Active -> Default (Wait, "Appear" usually means entering viewport. Let's assume on load for now).
           >
-            <motion.svg
-              key={recipe.layerMode === 'unified' ? animationKey : undefined}
-              viewBox={parsedSVG.viewBox}
-              className="preview-svg"
-              style={{
-                ...styles,
-                width: `${selectedSize}px`,
-                height: `${selectedSize}px`,
-                overflow: 'visible', // Allow transforms to go outside
-                cursor: recipe.trigger !== 'auto' ? 'pointer' : 'default',
-                transformOrigin: 'center',
-              }}
-              // TRIGGER HANDLERS ON SVG LEVEL (whole viewbox)
-              onHoverStart={recipe.trigger === 'hover' ? handleReplay : undefined}
-              onClick={recipe.trigger === 'click' ? handleClickTrigger : undefined}
-              // Apply unified variants when layerMode is 'unified'
-              variants={recipe.layerMode === 'unified' ? getUnifiedVariants(recipe) : undefined}
-              initial={recipe.layerMode === 'unified' ? 'idle' : undefined}
-              animate={recipe.layerMode === 'unified' ? animateState : undefined}
-            >
-              {parsedSVG.paths.map((path, index) => {
-                if (!path.visible) return null;
+            {/* Special handling for Panel morph preset */}
+            {recipe.preset === 'panel' ? (
+              <motion.div
+                style={{
+                  width: `${selectedSize}px`,
+                  height: `${selectedSize}px`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: recipe.trigger !== 'auto' ? 'pointer' : 'default',
+                }}
+                onHoverStart={recipe.trigger === 'hover' ? () => setIsMorphExpanded(true) : undefined}
+                onHoverEnd={recipe.trigger === 'hover' ? () => setIsMorphExpanded(false) : undefined}
+                onClick={recipe.trigger === 'click' ? () => setIsMorphExpanded(!isMorphExpanded) : undefined}
+              >
+                <PanelMorphIcon
+                  isExpanded={recipe.trigger === 'auto' ? animateState === 'play' : isMorphExpanded}
+                  size={selectedSize}
+                  strokeWidth={2}
+                />
+              </motion.div>
+            ) : (
+              <motion.svg
+                key={recipe.layerMode === 'unified' ? animationKey : undefined}
+                viewBox={parsedSVG.viewBox}
+                className="preview-svg"
+                style={{
+                  ...styles,
+                  width: `${selectedSize}px`,
+                  height: `${selectedSize}px`,
+                  overflow: 'visible', // Allow transforms to go outside
+                  cursor: recipe.trigger !== 'auto' ? 'pointer' : 'default',
+                  transformOrigin: 'center',
+                }}
+                // TRIGGER HANDLERS ON SVG LEVEL (whole viewbox)
+                onHoverStart={recipe.trigger === 'hover' ? handleReplay : undefined}
+                onClick={recipe.trigger === 'click' ? handleClickTrigger : undefined}
+                // Apply unified variants when layerMode is 'unified'
+                variants={recipe.layerMode === 'unified' ? getUnifiedVariants(recipe) : undefined}
+                initial={recipe.layerMode === 'unified' ? 'idle' : undefined}
+                animate={recipe.layerMode === 'unified' ? animateState : undefined}
+              >
+                {parsedSVG.paths.map((path, index) => {
+                  if (!path.visible) return null;
 
-                // Calculate Delay (for stroke animation)
-                let delay = settings.delay;
-                if (settings.staggerMode === 'forward') {
-                  delay += index * (settings.staggerAmount || 0);
-                } else if (settings.staggerMode === 'reverse') {
-                  delay += (parsedSVG.paths.length - 1 - index) * (settings.staggerAmount || 0);
-                }
-
-                // Calculate Fill
-                let fill = path.originalFill || 'currentColor';
-                if (settings.forceStroke || settings.fillMode === 'none') {
-                  fill = 'none';
-                }
-
-                // Fill Animation logic
-                const fadeDelay = delay + settings.duration * 0.8;
-                const hasFade = settings.fillMode === 'fade-in';
-
-                // Current Path Logic
-                const strokeColor = settings.overrideColor ? settings.strokeColor : (path.originalStroke || 'currentColor');
-                const strokeWidth = settings.overrideColor ? settings.strokeWidth : (parseFloat(path.originalStrokeWidth || '1') || 1);
-
-                const len = path.length || 1000;
-                const isHovered = hoveredPathIndex === index;
-                const isSelected = selectedPathIndex === index;
-
-                // Compute effective transform states from new initial/final structure
-                // If path has animation, use it; otherwise fall back to global transform
-                const initialState = path.animation ? path.animation.initial : settings.globalTransform.initial;
-                const finalState = path.animation ? path.animation.final : settings.globalTransform.final;
-
-                // For backward compatibility, use final state for effectiveTransform (for ghost/hasTransform)
-                const effectiveTransform = finalState;
-
-                // Check if there are any transforms to animate (comparing initial vs final)
-                const hasTransform = (
-                  initialState.x !== finalState.x ||
-                  initialState.y !== finalState.y ||
-                  initialState.scale !== finalState.scale ||
-                  initialState.rotate !== finalState.rotate ||
-                  initialState.opacity !== finalState.opacity
-                );
-
-                // Define Framer Motion variants based on animation direction
-                // 'in' = animate FROM initial TO final (entrance animation)
-                // 'out' = animate FROM final TO initial (exit animation)
-                const pathVariants = settings.animationDirection === 'in'
-                  ? {
-                    initial: initialState,
-                    active: finalState,
-                    transition: path.animation?.transition
+                  // Calculate Delay (for stroke animation)
+                  let delay = settings.delay;
+                  if (settings.staggerMode === 'forward') {
+                    delay += index * (settings.staggerAmount || 0);
+                  } else if (settings.staggerMode === 'reverse') {
+                    delay += (parsedSVG.paths.length - 1 - index) * (settings.staggerAmount || 0);
                   }
-                  : {
-                    initial: finalState,
-                    active: initialState,
-                    transition: path.animation?.transition
-                  };
 
-                return (
-                  <React.Fragment key={path.id}>
-                    {/* Transform Group - CSS-animated for timeline sync */}
-                    <g
-                      style={{
-                        // Initial state CSS variables (--ix, --iy, --is, --ir, --io)
-                        // @ts-ignore
-                        '--ix': `${initialState.x}px`,
-                        // @ts-ignore
-                        '--iy': `${initialState.y}px`,
-                        // @ts-ignore
-                        '--is': initialState.scale,
-                        // @ts-ignore
-                        '--ir': `${initialState.rotate}deg`,
-                        // @ts-ignore
-                        '--io': initialState.opacity,
-                        // Final state CSS variables (--fx, --fy, --fs, --fr, --fo)
-                        // @ts-ignore
-                        '--fx': `${finalState.x}px`,
-                        // @ts-ignore
-                        '--fy': `${finalState.y}px`,
-                        // @ts-ignore
-                        '--fs': finalState.scale,
-                        // @ts-ignore
-                        '--fr': `${finalState.rotate}deg`,
-                        // @ts-ignore
-                        '--fo': finalState.opacity,
-                        // @ts-ignore
-                        '--path-delay': `${delay}s`,
-                        // Animation properties removed - now using Framer Motion variants
-                        // Legacy CSS animation code removed
-                        transformOrigin: 'center',
-                        transformBox: 'fill-box'
-                      } as React.CSSProperties}
-                    >
-                      {/* Animated Path - trigger-based animation */}
-                      {/* In unified mode, paths are static - only parent SVG animates */}
-                      <motion.path
-                        key={`${path.id}-${animationKey}`}
-                        className="animating-path"
-                        d={path.d}
-                        transform={path.transform || undefined}
-                        fill={fill === 'none' ? 'none' : fill}
-                        stroke={strokeColor}
-                        strokeWidth={strokeWidth}
-                        strokeLinecap={settings.lineCap}
-                        strokeLinejoin={settings.lineJoin}
-                        pathLength={1}
-                        // Only animate paths in 'individual' mode
-                        variants={recipe.layerMode === 'individual' ? getPathVariants(recipe, index, parsedSVG.paths.length) : undefined}
-                        initial={recipe.layerMode === 'individual' ? 'idle' : undefined}
-                        animate={recipe.layerMode === 'individual' ? animateState : undefined}
+                  // Calculate Fill
+                  let fill = path.originalFill || 'currentColor';
+                  if (settings.forceStroke || settings.fillMode === 'none') {
+                    fill = 'none';
+                  }
+
+                  // Fill Animation logic
+                  const fadeDelay = delay + settings.duration * 0.8;
+                  const hasFade = settings.fillMode === 'fade-in';
+
+                  // Current Path Logic
+                  const strokeColor = settings.overrideColor ? settings.strokeColor : (path.originalStroke || 'currentColor');
+                  const strokeWidth = settings.overrideColor ? settings.strokeWidth : (parseFloat(path.originalStrokeWidth || '1') || 1);
+
+                  const len = path.length || 1000;
+                  const isHovered = hoveredPathIndex === index;
+                  const isSelected = selectedPathIndex === index;
+
+                  // Compute effective transform states from new initial/final structure
+                  // If path has animation, use it; otherwise fall back to global transform
+                  const initialState = path.animation ? path.animation.initial : settings.globalTransform.initial;
+                  const finalState = path.animation ? path.animation.final : settings.globalTransform.final;
+
+                  // For backward compatibility, use final state for effectiveTransform (for ghost/hasTransform)
+                  const effectiveTransform = finalState;
+
+                  // Check if there are any transforms to animate (comparing initial vs final)
+                  const hasTransform = (
+                    initialState.x !== finalState.x ||
+                    initialState.y !== finalState.y ||
+                    initialState.scale !== finalState.scale ||
+                    initialState.rotate !== finalState.rotate ||
+                    initialState.opacity !== finalState.opacity
+                  );
+
+                  // Define Framer Motion variants based on animation direction
+                  // 'in' = animate FROM initial TO final (entrance animation)
+                  // 'out' = animate FROM final TO initial (exit animation)
+                  const pathVariants = settings.animationDirection === 'in'
+                    ? {
+                      initial: initialState,
+                      active: finalState,
+                      transition: path.animation?.transition
+                    }
+                    : {
+                      initial: finalState,
+                      active: initialState,
+                      transition: path.animation?.transition
+                    };
+
+                  return (
+                    <React.Fragment key={path.id}>
+                      {/* Transform Group - CSS-animated for timeline sync */}
+                      <g
                         style={{
+                          // Initial state CSS variables (--ix, --iy, --is, --ir, --io)
+                          // @ts-ignore
+                          '--ix': `${initialState.x}px`,
+                          // @ts-ignore
+                          '--iy': `${initialState.y}px`,
+                          // @ts-ignore
+                          '--is': initialState.scale,
+                          // @ts-ignore
+                          '--ir': `${initialState.rotate}deg`,
+                          // @ts-ignore
+                          '--io': initialState.opacity,
+                          // Final state CSS variables (--fx, --fy, --fs, --fr, --fo)
+                          // @ts-ignore
+                          '--fx': `${finalState.x}px`,
+                          // @ts-ignore
+                          '--fy': `${finalState.y}px`,
+                          // @ts-ignore
+                          '--fs': finalState.scale,
+                          // @ts-ignore
+                          '--fr': `${finalState.rotate}deg`,
+                          // @ts-ignore
+                          '--fo': finalState.opacity,
+                          // @ts-ignore
+                          '--path-delay': `${delay}s`,
+                          // Animation properties removed - now using Framer Motion variants
+                          // Legacy CSS animation code removed
                           transformOrigin: 'center',
-                          transformBox: 'fill-box',
-                        }}
-                      />
-                    </g>
-                  </React.Fragment>
-                )
-              })}
-            </motion.svg>
+                          transformBox: 'fill-box'
+                        } as React.CSSProperties}
+                      >
+                        {/* Animated Path - trigger-based animation */}
+                        {/* In unified mode, paths are static - only parent SVG animates */}
+                        <motion.path
+                          key={`${path.id}-${animationKey}`}
+                          className="animating-path"
+                          d={path.d}
+                          transform={path.transform || undefined}
+                          fill={fill === 'none' ? 'none' : fill}
+                          stroke={strokeColor}
+                          strokeWidth={strokeWidth}
+                          strokeLinecap={settings.lineCap}
+                          strokeLinejoin={settings.lineJoin}
+                          pathLength={1}
+                          // Only animate paths in 'individual' mode
+                          variants={recipe.layerMode === 'individual' ? getPathVariants(recipe, index, parsedSVG.paths.length) : undefined}
+                          initial={recipe.layerMode === 'individual' ? 'idle' : undefined}
+                          animate={recipe.layerMode === 'individual' ? animateState : undefined}
+                          style={{
+                            transformOrigin: 'center',
+                            transformBox: 'fill-box',
+                          }}
+                        />
+                      </g>
+                    </React.Fragment>
+                  )
+                })}
+              </motion.svg>
+            )}
           </motion.div>
         </div>
       </div>
