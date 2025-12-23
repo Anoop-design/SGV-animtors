@@ -263,6 +263,11 @@ export default function IconMotionEditor() {
       shift: true,
       handler: () => addSvgPanelRef.current?.triggerUpload(),
     },
+    // E - open export modal
+    {
+      key: 'e',
+      handler: () => setShowExportModal(true),
+    },
     // Number keys 1-9 for presets
     ...PRESET_KEYS.map((preset, index) => ({
       key: String(index + 1),
@@ -421,6 +426,14 @@ export default function IconMotionEditor() {
             setSvgInput(svg);
             updateRecipe('preset', preset);
             updateRecipe('trigger', trigger);
+            // Draw presets need individual mode (pathLength per path)
+            if (preset === 'draw' || preset === 'draw-pop') {
+              updateRecipe('layerMode', 'individual');
+            }
+            // Spin/pulse look better with unified mode (whole icon animates together)
+            if (preset === 'spin' || preset === 'pulse') {
+              updateRecipe('layerMode', 'unified');
+            }
           }}
         />
 

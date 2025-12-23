@@ -99,6 +99,14 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
     // Apply animation preset - updates recipe directly
     const applyPreset = (presetId: string) => {
         updateRecipe('preset', presetId as PresetType);
+        // Draw presets need individual mode (pathLength per path)
+        if (presetId === 'draw' || presetId === 'draw-pop') {
+            updateRecipe('layerMode', 'individual');
+        }
+        // Spin/pulse look better with unified mode (whole icon animates together)
+        if (presetId === 'spin' || presetId === 'pulse') {
+            updateRecipe('layerMode', 'unified');
+        }
     };
 
     // Apply smart preset - applies all recipe settings at once
