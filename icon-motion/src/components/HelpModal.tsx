@@ -133,38 +133,40 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                                         transition={{ type: 'tween', duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
                                     >
                                         <div className="shortcuts-content">
-                                            {/* Global Shortcuts */}
+                                            {/* Playback */}
                                             <div className="shortcut-section">
-                                                <h3 className="shortcut-section-title">Global</h3>
+                                                <h3 className="shortcut-section-title">Playback</h3>
                                                 <div className="shortcut-list">
-                                                    <ShortcutRow keys={['Space']} description="Play / Pause" />
-                                                    <ShortcutRow keys={['R']} description="Restart animation" />
-                                                    <ShortcutRow keys={[mod, 'S']} description="Copy SVG code" />
-                                                    <ShortcutRow keys={[mod, 'E']} description="Open export menu" />
-                                                    <ShortcutRow keys={[mod, 'D']} description="Download SVG" />
+                                                    <ShortcutRow keys={['R']} description="Replay animation" />
+                                                    <ShortcutRow keys={['L']} description="Toggle loop" />
+                                                </div>
+                                            </div>
+
+                                            {/* Presets */}
+                                            <div className="shortcut-section">
+                                                <h3 className="shortcut-section-title">Presets</h3>
+                                                <div className="shortcut-list">
+                                                    <ShortcutRow keys={['1', '-', '9']} description="Select preset (Draw, Pop, Wiggle...)" />
+                                                    <ShortcutRow keys={['G']} description="Cycle trigger mode" />
+                                                </div>
+                                            </div>
+
+                                            {/* SVG Input */}
+                                            <div className="shortcut-section">
+                                                <h3 className="shortcut-section-title">SVG Input</h3>
+                                                <div className="shortcut-list">
+                                                    <ShortcutRow keys={[mod, 'Shift', 'V']} description="Paste SVG from clipboard" />
+                                                    <ShortcutRow keys={[mod, 'Shift', 'U']} description="Upload SVG file" />
+                                                </div>
+                                            </div>
+
+                                            {/* UI */}
+                                            <div className="shortcut-section">
+                                                <h3 className="shortcut-section-title">UI</h3>
+                                                <div className="shortcut-list">
                                                     <ShortcutRow keys={['T']} description="Toggle theme" />
                                                     <ShortcutRow keys={['?']} description="Show this help" />
-                                                </div>
-                                            </div>
-
-                                            {/* Input Field Shortcuts */}
-                                            <div className="shortcut-section">
-                                                <h3 className="shortcut-section-title">Input Fields</h3>
-                                                <div className="shortcut-list">
-                                                    <ShortcutRow keys={['↑', '/', '↓']} description="Nudge value" />
-                                                    <ShortcutRow keys={['Shift', '↑', '/', '↓']} description="Nudge × 10" />
-                                                    <ShortcutRow keys={['Alt', '↑', '/', '↓']} description="Nudge × 0.1" />
-                                                    <ShortcutRow keys={['Enter']} description="Confirm value" />
-                                                    <ShortcutRow keys={['Esc']} description="Revert value" />
-                                                </div>
-                                            </div>
-
-                                            {/* Tab Navigation */}
-                                            <div className="shortcut-section">
-                                                <h3 className="shortcut-section-title">Navigation</h3>
-                                                <div className="shortcut-list">
-                                                    <ShortcutRow keys={['1']} description="Settings tab" />
-                                                    <ShortcutRow keys={['2']} description="Layers tab" />
+                                                    <ShortcutRow keys={['Esc']} description="Close modals" />
                                                 </div>
                                             </div>
                                         </div>

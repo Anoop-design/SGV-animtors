@@ -3,12 +3,12 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Header } from '@/components/Header';
 import { Preview } from '@/components/Preview';
-import { AddSVGPanel } from '@/components/AddSVGPanel';
+import { AddSVGPanel, AddSVGPanelHandle } from '@/components/AddSVGPanel';
 import { TransformPanel } from '@/components/TransformPanel';
 import { HelpModal } from '@/components/HelpModal';
 import { ExportModal } from '@/components/ExportModal';
 import { ToastContainer, useToast } from '@/components/Toast';
-import { AnimationSettings, DEFAULT_ICON, ParsedSVG, DEFAULT_PATH_TRANSFORM, DEFAULT_GLOBAL_TRANSFORM, PathTransform, AnimationRecipe, DEFAULT_RECIPE, PresetType } from '@/types';
+import { AnimationSettings, DEFAULT_ICON, ParsedSVG, DEFAULT_PATH_TRANSFORM, DEFAULT_GLOBAL_TRANSFORM, PathTransform, AnimationRecipe, DEFAULT_RECIPE, PresetType, TriggerType, PRESET_OPTIONS } from '@/types';
 import { parseSVG } from '@/lib/svg-utils';
 import { generateExport, generateProExport, downloadSVG, ExportType } from '@/lib/generate-export';
 import { useKeyboardShortcuts } from '@/lib/useKeyboardShortcuts';
@@ -57,6 +57,7 @@ export default function IconMotionEditor() {
 
   const { toasts, addToast, removeToast } = useToast();
   const previewRef = useRef<{ togglePlay: () => void; handleReplay: () => void } | null>(null);
+  const addSvgPanelRef = useRef<AddSVGPanelHandle>(null);
 
   // Animation Recipe state - single source of truth for animation config
   const [recipe, setRecipe] = useState<AnimationRecipe>(DEFAULT_RECIPE);
@@ -182,35 +183,51 @@ export default function IconMotionEditor() {
     }
   }, [settings, isLoading]);
 
+  // Preset order matching PRESET_OPTIONS in types.ts
+  const PRESET_KEYS: PresetType[] = ['draw', 'pop', 'wiggle', 'bounce', 'draw-pop', 'fade', 'slide', 'spin', 'pulse'];
+
+  // Trigger order for cycling
+  const TRIGGER_ORDER: TriggerType[] = ['auto', 'hover', 'click'];
+
+  // Cycle to next trigger
+  const cycleTrigger = useCallback(() => {
+    const currentIndex = TRIGGER_ORDER.indexOf(recipe.trigger);
+    const nextIndex = (currentIndex + 1) % TRIGGER_ORDER.length;
+    updateRecipe('trigger', TRIGGER_ORDER[nextIndex]);
+    addToast(`Trigger: ${TRIGGER_ORDER[nextIndex]}`, 'info');
+  }, [recipe.trigger, updateRecipe, addToast]);
+
+  // Paste SVG from clipboard
+  const handlePasteSVG = useCallback(async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text.includes('<svg')) {
+        setSvgInput(text);
+        addToast('SVG pasted!', 'success');
+      } else {
+        addToast('Clipboard does not contain SVG', 'error');
+      }
+    } catch {
+      addToast('Failed to read clipboard', 'error');
+    }
+  }, [addToast]);
+
   // Global keyboard shortcuts
   useKeyboardShortcuts([
-    // Space - toggle play/pause
-    {
-      key: ' ',
-      handler: () => previewRef.current?.togglePlay(),
-    },
-    // R - restart animation
+    // R - replay animation
     {
       key: 'r',
       handler: () => previewRef.current?.handleReplay(),
     },
-    // Cmd/Ctrl + S - copy SVG
+    // G - cycle trigger (Auto → Hover → Click)
     {
-      key: 's',
-      meta: true,
-      handler: () => handleExport('svg'),
+      key: 'g',
+      handler: cycleTrigger,
     },
-    // Cmd/Ctrl + E - open export menu
+    // L - toggle loop
     {
-      key: 'e',
-      meta: true,
-      handler: () => setExportMenuOpen(prev => !prev),
-    },
-    // Cmd/Ctrl + D - download SVG
-    {
-      key: 'd',
-      meta: true,
-      handler: () => handleDownload(),
+      key: 'l',
+      handler: () => updateRecipe('loop', !recipe.loop),
     },
     // T - toggle theme
     {
@@ -228,10 +245,32 @@ export default function IconMotionEditor() {
       key: 'Escape',
       handler: () => {
         setShowHelpModal(false);
-        setExportMenuOpen(false);
+        setShowExportModal(false);
       },
       allowInInput: true,
     },
+    // Cmd/Ctrl + Shift + V - Paste SVG from clipboard
+    {
+      key: 'v',
+      meta: true,
+      shift: true,
+      handler: handlePasteSVG,
+    },
+    // Cmd/Ctrl + Shift + U - Upload file
+    {
+      key: 'u',
+      meta: true,
+      shift: true,
+      handler: () => addSvgPanelRef.current?.triggerUpload(),
+    },
+    // Number keys 1-9 for presets
+    ...PRESET_KEYS.map((preset, index) => ({
+      key: String(index + 1),
+      handler: () => {
+        updateRecipe('preset', preset);
+        addToast(`Preset: ${PRESET_OPTIONS[index].label}`, 'info');
+      },
+    })),
   ]);
 
   // Callback to update path lengths from Preview component
@@ -372,6 +411,7 @@ export default function IconMotionEditor() {
 
         {/* Left Panel - Add SVG */}
         <AddSVGPanel
+          ref={addSvgPanelRef}
           svgInput={svgInput}
           setSvgInput={setSvgInput}
           warnings={parsedSVG.warnings}

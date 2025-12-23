@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { UploadZone } from '@/components/ui/UploadZone';
+import React, { forwardRef, useRef, useImperativeHandle } from 'react';
+import { UploadZone, UploadZoneHandle } from '@/components/ui/UploadZone';
 import { AlertTriangle, Heart, Layers, Briefcase, GraduationCap, Bell, AlertCircle, Shield, AlertOctagon, Zap, X } from 'lucide-react';
 import '@/styles.css';
 
@@ -12,6 +12,10 @@ interface AddSVGPanelProps {
     // Responsive props
     isOpen?: boolean;
     onClose?: () => void;
+}
+
+export interface AddSVGPanelHandle {
+    triggerUpload: () => void;
 }
 
 // Example SVG icons for the grid
@@ -73,13 +77,20 @@ const EXAMPLE_ICONS = [
  * - .add-svg-header: Header with "Add SVG" title
  * - .add-svg-content: Content area
  */
-export const AddSVGPanel: React.FC<AddSVGPanelProps> = ({
+export const AddSVGPanel = forwardRef<AddSVGPanelHandle, AddSVGPanelProps>(({
     svgInput,
     setSvgInput,
     warnings,
     isOpen,
     onClose
-}) => {
+}, ref) => {
+    const uploadRef = useRef<UploadZoneHandle>(null);
+
+    // Expose triggerUpload for keyboard shortcuts
+    useImperativeHandle(ref, () => ({
+        triggerUpload: () => uploadRef.current?.triggerUpload(),
+    }));
+
     return (
         <div className={`add-svg-panel ${isOpen ? 'panel-open' : ''}`}>
             {/* Header */}
@@ -95,7 +106,7 @@ export const AddSVGPanel: React.FC<AddSVGPanelProps> = ({
             <div className="add-svg-content hide-scrollbar">
                 {/* Upload Zone */}
                 <div className="add-svg-section">
-                    <UploadZone onFileSelect={setSvgInput} />
+                    <UploadZone ref={uploadRef} onFileSelect={setSvgInput} />
                 </div>
 
                 {/* Example Icons Section */}
@@ -141,4 +152,7 @@ export const AddSVGPanel: React.FC<AddSVGPanelProps> = ({
             </div>
         </div>
     );
-};
+});
+
+AddSVGPanel.displayName = 'AddSVGPanel';
+

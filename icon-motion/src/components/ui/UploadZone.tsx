@@ -1,12 +1,16 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, forwardRef, useImperativeHandle } from 'react';
 import { Upload } from 'lucide-react';
 import '../../styles.css';
 
 interface UploadZoneProps {
     onFileSelect: (content: string) => void;
     className?: string;
+}
+
+export interface UploadZoneHandle {
+    triggerUpload: () => void;
 }
 
 /**
@@ -21,8 +25,13 @@ interface UploadZoneProps {
  * 
  * Accepts: .svg files only
  */
-export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, className = '' }) => {
+export const UploadZone = forwardRef<UploadZoneHandle, UploadZoneProps>(({ onFileSelect, className = '' }, ref) => {
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Expose triggerUpload for keyboard shortcuts
+    useImperativeHandle(ref, () => ({
+        triggerUpload: () => inputRef.current?.click(),
+    }));
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -80,4 +89,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, className 
             </button>
         </div>
     );
-};
+});
+
+UploadZone.displayName = 'UploadZone';
+
