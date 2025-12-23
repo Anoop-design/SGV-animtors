@@ -12,16 +12,16 @@ interface ToastProps {
     onClose: () => void;
 }
 
-// Animation variants for toast
+// Animation variants for toast - slides up from bottom
 const toastVariants = {
     initial: {
         opacity: 0,
-        x: 100,
-        scale: 0.9,
+        y: 50,
+        scale: 0.95,
     },
     animate: {
         opacity: 1,
-        x: 0,
+        y: 0,
         scale: 1,
         transition: {
             type: 'spring' as const,
@@ -31,13 +31,14 @@ const toastVariants = {
     },
     exit: {
         opacity: 0,
-        x: 50,
-        scale: 0.9,
+        y: 30,
+        scale: 0.95,
         transition: {
             duration: 0.2,
         },
     },
 };
+
 
 /**
  * Toast Component
