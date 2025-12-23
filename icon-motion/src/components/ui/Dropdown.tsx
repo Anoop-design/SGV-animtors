@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check } from 'lucide-react';
 import '../../styles.css';
 
@@ -76,34 +77,6 @@ export const Dropdown: React.FC<DropdownProps> = ({
         };
     }, [isOpen]);
 
-    const menu = isOpen ? (
-        <div
-            ref={menuRef}
-            className="custom-dropdown-menu"
-            style={{
-                position: 'fixed',
-                top: menuPosition.top,
-                left: menuPosition.left,
-                width: menuPosition.width,
-                zIndex: 9999,
-            }}
-        >
-            {options.map((option) => (
-                <button
-                    key={option.value}
-                    className={`custom-dropdown-option ${value === option.value ? 'active' : ''}`}
-                    onClick={() => {
-                        onChange(option.value);
-                        setIsOpen(false);
-                    }}
-                >
-                    <span>{option.label}</span>
-                    {value === option.value && <Check size={14} />}
-                </button>
-            ))}
-        </div>
-    ) : null;
-
     return (
         <div
             className={`relative w-full ${className}`}
@@ -118,12 +91,56 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 <span className="truncate">
                     {selectedOption ? (displayValue || selectedOption.label) : placeholder}
                 </span>
-                <ChevronDown size={14} className={`text-text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                <motion.div
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                >
+                    <ChevronDown size={14} className="text-text-muted" />
+                </motion.div>
             </button>
 
-            {/* Render menu in portal to escape overflow constraints */}
-            {menu && createPortal(menu, document.body)}
+            {/* Render menu in portal with AnimatePresence for smooth enter/exit */}
+            {createPortal(
+                <AnimatePresence>
+                    {isOpen && (
+                        <motion.div
+                            ref={menuRef}
+                            className="custom-dropdown-menu"
+                            style={{
+                                position: 'fixed',
+                                top: menuPosition.top,
+                                left: menuPosition.left,
+                                width: menuPosition.width,
+                                zIndex: 9999,
+                            }}
+                            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                            transition={{
+                                type: 'spring',
+                                stiffness: 500,
+                                damping: 30,
+                                mass: 0.8
+                            }}
+                        >
+                            {options.map((option) => (
+                                <button
+                                    key={option.value}
+                                    className={`custom-dropdown-option ${value === option.value ? 'active' : ''}`}
+                                    onClick={() => {
+                                        onChange(option.value);
+                                        setIsOpen(false);
+                                    }}
+                                >
+                                    <span>{option.label}</span>
+                                    {value === option.value && <Check size={14} />}
+                                </button>
+                            ))}
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 };
-
