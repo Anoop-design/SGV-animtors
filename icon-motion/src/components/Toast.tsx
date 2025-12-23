@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Check, X } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check, X, Info } from 'lucide-react';
 import '@/styles.css';
 
 interface ToastProps {
@@ -11,16 +12,38 @@ interface ToastProps {
     onClose: () => void;
 }
 
+// Animation variants for toast
+const toastVariants = {
+    initial: {
+        opacity: 0,
+        x: 100,
+        scale: 0.9,
+    },
+    animate: {
+        opacity: 1,
+        x: 0,
+        scale: 1,
+        transition: {
+            type: 'spring' as const,
+            stiffness: 400,
+            damping: 25,
+        },
+    },
+    exit: {
+        opacity: 0,
+        x: 50,
+        scale: 0.9,
+        transition: {
+            duration: 0.2,
+        },
+    },
+};
+
 /**
  * Toast Component
  * 
- * A notification toast that appears and auto-dismisses.
- * 
- * CSS Classes:
- * - .toast: Main container
- * - .toast-success/error/info: Type variants
- * - .toast-content: Icon and message wrapper
- * - .toast-close: Close button
+ * A notification toast with Framer Motion animations.
+ * Slides in from right with spring animation, exits with fade.
  */
 export const Toast: React.FC<ToastProps> = ({
     message,
@@ -28,28 +51,47 @@ export const Toast: React.FC<ToastProps> = ({
     duration = 3000,
     onClose
 }) => {
-    const [isVisible, setIsVisible] = useState(true);
-
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsVisible(false);
-            setTimeout(onClose, 200); // Wait for exit animation
-        }, duration);
-
+        const timer = setTimeout(onClose, duration);
         return () => clearTimeout(timer);
     }, [duration, onClose]);
 
+    const getIcon = () => {
+        switch (type) {
+            case 'success': return <Check size={16} />;
+            case 'error': return <X size={16} />;
+            case 'info': return <Info size={16} />;
+        }
+    };
+
     return (
-        <div className={`toast toast-${type} ${isVisible ? 'toast-enter' : 'toast-exit'}`}>
+        <motion.div
+            className={`toast toast-${type}`}
+            variants={toastVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            layout
+        >
             <div className="toast-content">
-                {type === 'success' && <Check size={16} />}
-                {type === 'error' && <X size={16} />}
+                <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 25, delay: 0.1 }}
+                >
+                    {getIcon()}
+                </motion.div>
                 <span className="toast-message">{message}</span>
             </div>
-            <button className="toast-close" onClick={() => { setIsVisible(false); setTimeout(onClose, 200); }}>
+            <motion.button
+                className="toast-close"
+                onClick={onClose}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+            >
                 <X size={14} />
-            </button>
-        </div>
+            </motion.button>
+        </motion.div>
     );
 };
 
@@ -61,19 +103,21 @@ interface ToastContainerProps {
 /**
  * ToastContainer Component
  * 
- * Container that positions and manages multiple toasts.
+ * Container with AnimatePresence for smooth toast transitions.
  */
 export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, removeToast }) => {
     return (
         <div className="toast-container">
-            {toasts.map(toast => (
-                <Toast
-                    key={toast.id}
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => removeToast(toast.id)}
-                />
-            ))}
+            <AnimatePresence mode="popLayout">
+                {toasts.map(toast => (
+                    <Toast
+                        key={toast.id}
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => removeToast(toast.id)}
+                    />
+                ))}
+            </AnimatePresence>
         </div>
     );
 };
@@ -84,7 +128,7 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, removeTo
  * Hook to manage toast state.
  */
 export function useToast() {
-    const [toasts, setToasts] = useState<Array<{ id: string; message: string; type?: 'success' | 'error' | 'info' }>>([]);
+    const [toasts, setToasts] = React.useState<Array<{ id: string; message: string; type?: 'success' | 'error' | 'info' }>>([]);
 
     const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
         const id = Math.random().toString(36).substr(2, 9);
