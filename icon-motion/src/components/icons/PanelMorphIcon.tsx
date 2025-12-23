@@ -50,18 +50,12 @@ export const PanelMorphIcon: React.FC<PanelMorphIconProps> = ({
                 ry="2"
             />
 
-            {/* Divider line - fades and moves right when expanded */}
-            <motion.line
+            {/* Divider line - stays static */}
+            <line
                 x1={15}
                 y1={3}
                 x2={15}
                 y2={21}
-                animate={{
-                    opacity: isExpanded ? 0 : 1,
-                    x1: isExpanded ? 21 : 15,
-                    x2: isExpanded ? 21 : 15,
-                }}
-                transition={springTransition}
             />
 
             {/* Fill panel - expands from right edge inward */}

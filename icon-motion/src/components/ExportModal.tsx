@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Copy, CircleCheck, Download, RotateCcw } from 'lucide-react';
 import { ParsedSVG, AnimationSettings, AnimationRecipe, DEFAULT_RECIPE, PresetType } from '@/types';
 import { generateExport, generateProExport, ExportType } from '@/lib/generate-export';
+import { PanelMorphIcon } from '@/components/icons/PanelMorphIcon';
 import '@/styles.css';
 
 interface ExportModalProps {
@@ -293,40 +294,50 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 
                                 {/* Animated Icon Preview */}
                                 <div className="export-preview-canvas">
-                                    <motion.svg
-                                        key={animationKey}
-                                        viewBox={parsedSVG.viewBox}
-                                        className="export-preview-svg"
-                                        initial={recipe.layerMode === 'unified' ? variants.initial : undefined}
-                                        animate={isAnimating && recipe.layerMode === 'unified' ? variants.animate : undefined}
-                                        transition={{
-                                            duration: duration,
-                                            ease: normalizedEasing,
-                                            repeat: isContinuous && recipe.loop ? Infinity : 0,
-                                        }}
-                                        style={{ transformOrigin: 'center' }}
-                                    >
-                                        {visiblePaths.map((path, index) => (
-                                            <motion.path
-                                                key={index}
-                                                d={path.d}
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth={2}
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                initial={recipe.layerMode === 'individual' ? variants.initial : undefined}
-                                                animate={isAnimating && recipe.layerMode === 'individual' ? variants.animate : undefined}
-                                                transition={{
-                                                    duration: duration,
-                                                    delay: index * recipe.stagger,
-                                                    ease: normalizedEasing,
-                                                    repeat: isContinuous && recipe.loop ? Infinity : 0,
-                                                }}
-                                                style={{ transformOrigin: 'center', transformBox: 'fill-box' }}
-                                            />
-                                        ))}
-                                    </motion.svg>
+                                    {/* Special handling for Panel morph preset */}
+                                    {recipe.preset === 'panel' ? (
+                                        <PanelMorphIcon
+                                            isExpanded={isAnimating}
+                                            size={64}
+                                            strokeWidth={settings.overrideColor ? settings.strokeWidth : 2}
+                                            color={settings.overrideColor ? settings.strokeColor : 'currentColor'}
+                                        />
+                                    ) : (
+                                        <motion.svg
+                                            key={animationKey}
+                                            viewBox={parsedSVG.viewBox}
+                                            className="export-preview-svg"
+                                            initial={recipe.layerMode === 'unified' ? variants.initial : undefined}
+                                            animate={isAnimating && recipe.layerMode === 'unified' ? variants.animate : undefined}
+                                            transition={{
+                                                duration: duration,
+                                                ease: normalizedEasing,
+                                                repeat: isContinuous && recipe.loop ? Infinity : 0,
+                                            }}
+                                            style={{ transformOrigin: 'center' }}
+                                        >
+                                            {visiblePaths.map((path, index) => (
+                                                <motion.path
+                                                    key={index}
+                                                    d={path.d}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth={2}
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    initial={recipe.layerMode === 'individual' ? variants.initial : undefined}
+                                                    animate={isAnimating && recipe.layerMode === 'individual' ? variants.animate : undefined}
+                                                    transition={{
+                                                        duration: duration,
+                                                        delay: index * recipe.stagger,
+                                                        ease: normalizedEasing,
+                                                        repeat: isContinuous && recipe.loop ? Infinity : 0,
+                                                    }}
+                                                    style={{ transformOrigin: 'center', transformBox: 'fill-box' }}
+                                                />
+                                            ))}
+                                        </motion.svg>
+                                    )}
                                 </div>
                             </div>
 

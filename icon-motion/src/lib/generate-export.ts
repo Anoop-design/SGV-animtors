@@ -396,6 +396,180 @@ export function downloadSVG(content: string, filename: string = 'animated-icon.s
   URL.revokeObjectURL(url);
 }
 /**
+ * Generate Panel Morph Icon export
+ * Special export for the panel toggle animation preset
+ */
+function generatePanelMorphExport(
+  settings: AnimationSettings,
+  recipe: AnimationRecipe,
+  componentName: string = 'PanelMorphIcon'
+): string {
+  const strokeColor = settings.overrideColor ? settings.strokeColor : 'currentColor';
+  const strokeWidth = settings.overrideColor ? settings.strokeWidth : 2;
+
+  return `"use client";
+
+import React, { forwardRef, useImperativeHandle, useState } from "react";
+import { motion } from "framer-motion";
+
+// =============================================================================
+// TYPE DEFINITIONS
+// =============================================================================
+
+export type TriggerType = "auto" | "hover" | "click" | "manual";
+
+export interface ${componentName}Props {
+  /** Width and height of the icon in pixels */
+  size?: number;
+  /** Icon color (stroke and fill) */
+  color?: string;
+  /** Stroke width */
+  strokeWidth?: number;
+  /** Animation trigger type */
+  trigger?: TriggerType;
+  /** Whether to start in expanded state */
+  defaultExpanded?: boolean;
+  /** Additional CSS class name */
+  className?: string;
+}
+
+export interface ${componentName}Ref {
+  /** Toggle the expanded state */
+  toggle: () => void;
+  /** Expand the panel */
+  expand: () => void;
+  /** Collapse the panel */
+  collapse: () => void;
+}
+
+// =============================================================================
+// PANEL MORPH ICON COMPONENT
+// Morphs between PanelRight (collapsed) and filled panel (expanded)
+// =============================================================================
+
+export const ${componentName} = forwardRef<${componentName}Ref, ${componentName}Props>(
+  (
+    {
+      size = 24,
+      color = "${strokeColor}",
+      strokeWidth = ${strokeWidth},
+      trigger = "${recipe.trigger}",
+      defaultExpanded = false,
+      className,
+    },
+    ref
+  ) => {
+    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+    const springTransition = {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 25,
+    };
+
+    // Expose imperative methods
+    useImperativeHandle(ref, () => ({
+      toggle: () => setIsExpanded((prev) => !prev),
+      expand: () => setIsExpanded(true),
+      collapse: () => setIsExpanded(false),
+    }));
+
+    // Event handlers
+    const handleMouseEnter = () => {
+      if (trigger === "hover") setIsExpanded(true);
+    };
+
+    const handleMouseLeave = () => {
+      if (trigger === "hover") setIsExpanded(false);
+    };
+
+    const handleClick = () => {
+      if (trigger === "click") setIsExpanded((prev) => !prev);
+    };
+
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        width={size}
+        height={size}
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
+        style={{ cursor: trigger !== "auto" && trigger !== "manual" ? "pointer" : "default" }}
+      >
+        {/* Outer rounded rect - always visible */}
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+
+        {/* Divider line - stays static */}
+        <line
+          x1={15}
+          y1={3}
+          x2={15}
+          y2={21}
+        />
+
+        {/* Fill panel - expands from right edge inward */}
+        <motion.rect
+          y="3"
+          rx="0"
+          ry="0"
+          fill={color}
+          stroke="none"
+          animate={{
+            x: isExpanded ? 15 : 21,
+            width: isExpanded ? 6 : 0,
+            height: 18,
+            opacity: isExpanded ? 1 : 1,
+          }}
+          transition={springTransition}
+        />
+      </svg>
+    );
+  }
+);
+
+${componentName}.displayName = "${componentName}";
+
+export default ${componentName};
+
+// =============================================================================
+// USAGE EXAMPLE
+// =============================================================================
+/*
+import { ${componentName}, type ${componentName}Ref } from "./${componentName}";
+import { useRef } from "react";
+
+function App() {
+  const iconRef = useRef<${componentName}Ref>(null);
+
+  return (
+    <>
+      {/* Toggle on hover */}
+      <${componentName} size={32} color="#6366f1" trigger="hover" />
+
+      {/* Toggle on click */}
+      <${componentName} size={24} trigger="click" />
+
+      {/* Manual control via ref */}
+      <${componentName} ref={iconRef} trigger="manual" />
+      <button onClick={() => iconRef.current?.toggle()}>Toggle</button>
+      <button onClick={() => iconRef.current?.expand()}>Expand</button>
+      <button onClick={() => iconRef.current?.collapse()}>Collapse</button>
+    </>
+  );
+}
+*/
+`;
+}
+
+/**
  * Generate production-ready React component with TypeScript
  * Includes: configurable props, imperative ref, trigger support
  * NOW SUPPORTS: All presets (draw, pop, wiggle, bounce, spin, etc.) from recipe
@@ -406,6 +580,11 @@ export function generateProExport(
   recipe: AnimationRecipe,
   componentName: string = 'AnimatedIcon'
 ): string {
+  // Special handling for Panel morph preset
+  if (recipe.preset === 'panel') {
+    return generatePanelMorphExport(settings, recipe, componentName);
+  }
+
   const { visiblePaths, getPathAttrs } = generateExportData(parsedSVG, settings);
   const totalPaths = visiblePaths.length;
 

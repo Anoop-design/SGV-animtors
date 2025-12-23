@@ -813,7 +813,8 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
                 <PanelMorphIcon
                   isExpanded={recipe.trigger === 'auto' ? animateState === 'play' : isMorphExpanded}
                   size={selectedSize}
-                  strokeWidth={2}
+                  strokeWidth={settings.overrideColor ? settings.strokeWidth : 2}
+                  color={settings.overrideColor ? settings.strokeColor : 'currentColor'}
                 />
               </motion.div>
             ) : (
