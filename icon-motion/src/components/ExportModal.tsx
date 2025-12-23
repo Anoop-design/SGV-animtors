@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { X, Copy, Check, Download, Code2, FileCode2, Palette, RotateCcw, Play } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Copy, Check, Download, RotateCcw } from 'lucide-react';
 import { ParsedSVG, AnimationSettings, AnimationRecipe, DEFAULT_RECIPE, PresetType } from '@/types';
-import { generateExport, generateProExport, ExportType, downloadSVG } from '@/lib/generate-export';
+import { generateExport, generateProExport, ExportType } from '@/lib/generate-export';
 import '@/styles.css';
 
 interface ExportModalProps {
@@ -17,38 +17,58 @@ interface ExportModalProps {
 
 type ExportFormat = 'react-pro' | 'framer-motion' | 'css' | 'svg';
 
-interface FormatOption {
+interface FormatTab {
     id: ExportFormat;
     name: string;
-    description: string;
     icon: React.ReactNode;
 }
 
-const FORMAT_OPTIONS: FormatOption[] = [
-    {
-        id: 'react-pro',
-        name: 'React + Framer Motion',
-        description: 'Production-ready with TypeScript',
-        icon: <Code2 size={18} />,
-    },
-    {
-        id: 'framer-motion',
-        name: 'Framer Motion (Basic)',
-        description: 'Simple animated component',
-        icon: <FileCode2 size={18} />,
-    },
-    {
-        id: 'css',
-        name: 'CSS Animation',
-        description: 'Pure CSS keyframes',
-        icon: <Palette size={18} />,
-    },
-    {
-        id: 'svg',
-        name: 'Animated SVG',
-        description: 'Self-contained SVG',
-        icon: <FileCode2 size={18} />,
-    },
+// Official SVG icons - matching the Header dropdown logos
+const ReactLogo = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="12" cy="12" r="2.5" />
+        <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke="currentColor" strokeWidth="1.5" transform="rotate(60 12 12)" />
+        <ellipse cx="12" cy="12" rx="10" ry="4" fill="none" stroke="currentColor" strokeWidth="1.5" transform="rotate(120 12 12)" />
+    </svg>
+);
+
+// Official Framer Motion "M" swoosh logo
+const FramerMotionLogo = () => (
+    <svg width="16" height="16" viewBox="0 0 34 33" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g clipPath="url(#clip0_export_fm)">
+            <path d="M12.838 10.5055L6.12 22.4945H0L5.245 13.1335C6.059 11.6815 8.088 10.5055 9.778 10.5055H12.838ZM27.846 13.5025C27.846 11.8475 29.216 10.5055 30.906 10.5055C32.596 10.5055 33.966 11.8475 33.966 13.5025C33.966 15.1585 32.596 16.5005 30.906 16.5005C29.216 16.5005 27.846 15.1585 27.846 13.5025ZM13.985 10.5055H20.105L13.387 22.4945H7.267L13.985 10.5055ZM21.214 10.5055H27.334L22.088 19.8675C21.275 21.3185 19.246 22.4945 17.556 22.4945H14.496L21.214 10.5055Z" fill="currentColor" />
+        </g>
+        <defs>
+            <clipPath id="clip0_export_fm">
+                <rect width="33.966" height="33" fill="currentColor" />
+            </clipPath>
+        </defs>
+    </svg>
+);
+
+// CSS3 shield logo
+const CssLogo = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 3h16l-2 18-6 2-6-2L4 3z" />
+        <path d="M8 8h8l-.5 5H9l-.25 3 3.25 1 3-1" />
+    </svg>
+);
+
+// SVG file icon
+const SvgLogo = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <path d="M9 15l2 2 4-4" />
+    </svg>
+);
+
+const FORMAT_TABS: FormatTab[] = [
+    { id: 'react-pro', name: 'React + Framer Motion', icon: <ReactLogo /> },
+    { id: 'framer-motion', name: 'Framer Motion', icon: <FramerMotionLogo /> },
+    { id: 'css', name: 'CSS', icon: <CssLogo /> },
+    { id: 'svg', name: 'SVG', icon: <SvgLogo /> },
 ];
 
 // Get animation variants based on preset
@@ -96,7 +116,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     const variants = getPreviewVariants(recipe.preset, recipe.intensity);
     const isContinuous = recipe.preset === 'spin' || recipe.preset === 'pulse';
     const duration = recipe.transition?.duration ?? recipe.duration;
-    // Normalize easing for Framer Motion (spring and custom not valid for ease prop)
+
+    // Normalize easing for Framer Motion
     const getValidEasing = () => {
         const validEasings = ['linear', 'easeIn', 'easeOut', 'easeInOut'] as const;
         if (validEasings.includes(recipe.easing as typeof validEasings[number])) {
@@ -121,6 +142,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 return '';
         }
     }, [parsedSVG, settings, recipe, selectedFormat]);
+
+    // Get filename based on format
+    const getFilename = () => {
+        switch (selectedFormat) {
+            case 'svg': return 'animated-icon.svg';
+            case 'css': return 'animated-icon.css';
+            default: return 'AnimatedIcon.tsx';
+        }
+    };
 
     // Replay animation
     const handleReplay = useCallback(() => {
@@ -181,7 +211,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         setCopied(false);
     }, [selectedFormat]);
 
-    // Close on escape key
+    // Keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -216,25 +246,31 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                     >
                         {/* Header */}
                         <div className="export-modal-header">
-                            <h2 className="export-modal-title">Export Animation</h2>
+                            <h2 className="export-modal-title">Export animation</h2>
                             <button className="export-modal-close" onClick={onClose}>
                                 <X size={20} />
                             </button>
                         </div>
 
-                        {/* Format Selector */}
-                        <div className="export-format-selector">
-                            {FORMAT_OPTIONS.map((format) => (
+                        {/* Format Tabs - with animated indicator */}
+                        <div
+                            className="export-format-tabs"
+                            style={{
+                                '--tab-count': FORMAT_TABS.length,
+                                '--selected-index': FORMAT_TABS.findIndex(f => f.id === selectedFormat),
+                            } as React.CSSProperties}
+                        >
+                            {/* Animated sliding indicator */}
+                            <div className="export-tab-indicator" aria-hidden="true" />
+
+                            {FORMAT_TABS.map((format) => (
                                 <button
                                     key={format.id}
-                                    className={`export-format-option ${selectedFormat === format.id ? 'selected' : ''}`}
+                                    className={`export-format-tab ${selectedFormat === format.id ? 'selected' : ''}`}
                                     onClick={() => setSelectedFormat(format.id)}
                                 >
-                                    <span className="export-format-icon">{format.icon}</span>
-                                    <div className="export-format-text">
-                                        <span className="export-format-name">{format.name}</span>
-                                        <span className="export-format-desc">{format.description}</span>
-                                    </div>
+                                    <span className="export-tab-icon">{format.icon}</span>
+                                    <span className="export-tab-name">{format.name}</span>
                                 </button>
                             ))}
                         </div>
@@ -243,13 +279,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                         <div className="export-content-grid">
                             {/* Left: Live Preview */}
                             <div className="export-preview-panel">
-                                <div className="export-preview-header">
-                                    <span className="export-preview-label">Live Preview</span>
-                                    <button className="export-replay-btn" onClick={handleReplay} title="Replay animation (R)">
-                                        <RotateCcw size={14} />
-                                        Replay
-                                    </button>
-                                </div>
+                                {/* Floating Replay Button */}
+                                <button
+                                    className="export-replay-floating"
+                                    onClick={handleReplay}
+                                    title="Replay animation (R)"
+                                >
+                                    <RotateCcw size={14} />
+                                    Replay
+                                </button>
 
                                 {/* Animated Icon Preview */}
                                 <div className="export-preview-canvas">
@@ -288,27 +326,21 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                                         ))}
                                     </motion.svg>
                                 </div>
-
-                                {/* Props Summary */}
-                                <div className="export-props-summary">
-                                    <span className="export-props-title">Configurable Props</span>
-                                    <div className="export-props-list">
-                                        <code>size={24}</code>
-                                        <code>color="currentColor"</code>
-                                        <code>trigger="{recipe.trigger}"</code>
-                                        {recipe.loop && <code>loop</code>}
-                                    </div>
-                                </div>
                             </div>
 
                             {/* Right: Code Panel */}
                             <div className="export-code-panel">
                                 <div className="export-code-header">
-                                    <span className="export-code-filename">
-                                        {selectedFormat === 'svg' ? 'animated-icon.svg' :
-                                            selectedFormat === 'css' ? 'animated-icon.css' : 'AnimatedIcon.tsx'}
-                                    </span>
+                                    <span className="export-code-filename">{getFilename()}</span>
                                     <div className="export-code-actions">
+                                        <button
+                                            className="export-action-btn"
+                                            onClick={handleDownload}
+                                            title="Download file"
+                                        >
+                                            <Download size={14} />
+                                            Export
+                                        </button>
                                         <button
                                             className={`export-action-btn ${copied ? 'copied' : ''}`}
                                             onClick={handleCopy}
@@ -323,7 +355,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                                                         exit={{ scale: 0 }}
                                                         className="export-copy-success"
                                                     >
-                                                        <Check size={16} />
+                                                        <Check size={14} />
                                                         Copied!
                                                     </motion.span>
                                                 ) : (
@@ -333,19 +365,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                                                         animate={{ scale: 1 }}
                                                         exit={{ scale: 0 }}
                                                     >
-                                                        <Copy size={16} />
+                                                        <Copy size={14} />
                                                         Copy
                                                     </motion.span>
                                                 )}
                                             </AnimatePresence>
-                                        </button>
-                                        <button
-                                            className="export-action-btn"
-                                            onClick={handleDownload}
-                                            title="Download file"
-                                        >
-                                            <Download size={16} />
-                                            Download
                                         </button>
                                     </div>
                                 </div>

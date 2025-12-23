@@ -77,6 +77,7 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
     const [transitionEditorOpen, setTransitionEditorOpen] = useState(false);
     const [hoveredPreset, setHoveredPreset] = useState<PresetType | null>(null);
     const transitionButtonRef = useRef<HTMLButtonElement>(null);
+    const [selectedSmartPreset, setSelectedSmartPreset] = useState<string | null>(null);
 
     // Check if animation values are modified from defaults
     const isAnimationModified =
@@ -104,6 +105,9 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
     const applySmartPreset = (presetId: string) => {
         const smartPreset = SMART_PRESETS.find(p => p.id === presetId);
         if (!smartPreset) return;
+
+        // Track selected preset
+        setSelectedSmartPreset(presetId);
 
         // Apply all recipe overrides from the smart preset
         Object.entries(smartPreset.recipe).forEach(([key, value]) => {
@@ -216,9 +220,10 @@ export const TransformPanel: React.FC<TransformPanelProps> = ({
                                         </div>
                                     )
                                 }))}
-                                value=""
+                                value={selectedSmartPreset || ''}
                                 onChange={applySmartPreset}
                                 placeholder="Choose a recipe..."
+                                displayValue={selectedSmartPreset ? SMART_PRESETS.find(p => p.id === selectedSmartPreset)?.name : undefined}
                             />
                         </div>
                     </div>

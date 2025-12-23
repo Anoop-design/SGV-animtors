@@ -102,17 +102,9 @@ export const Header: React.FC<HeaderProps> = ({
   const [showExportMenu, setShowExportMenu] = React.useState(false);
 
   const exportOptions = [
-    { preview: true, label: 'Export with Preview', desc: 'Preview & copy code', icon: Code, primary: true },
+    { preview: true, label: 'Export with Preview...', desc: 'View & copy code', icon: Code, primary: true },
     { divider: true },
-    { type: 'svg' as ExportType, label: 'Copy SVG', desc: 'Animated SVG with CSS', icon: Copy, shortcut: '⌘S' },
-    { type: 'css' as ExportType, label: 'Copy CSS', desc: 'Keyframes & classes only', icon: Code },
-    { divider: true },
-    { type: 'framer-motion-pro' as ExportType, label: 'React + Framer Motion', desc: 'Production-ready component', icon: FramerMotionLogo },
-    { type: 'react' as ExportType, label: 'React (CSS)', desc: 'Simple React component', icon: ReactLogo },
-    { type: 'framer-motion' as ExportType, label: 'Framer Motion (Basic)', desc: 'motion.path draw only', icon: FramerMotionLogo },
-    { type: 'gsap' as ExportType, label: 'Copy GSAP', desc: 'GreenSock timeline', icon: GsapLogo },
-    { type: 'vue' as ExportType, label: 'Copy Vue', desc: 'Vue SFC component', icon: VueLogo },
-    { divider: true },
+    { type: 'svg' as ExportType, label: 'Quick Copy SVG', desc: 'Animated SVG', icon: Copy, shortcut: '⌘S' },
     { download: true, label: 'Download SVG', desc: 'Save as .svg file', icon: FileDown },
   ];
 

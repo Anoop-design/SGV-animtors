@@ -16,6 +16,8 @@ interface DropdownProps {
     onChange: (value: string) => void;
     placeholder?: React.ReactNode;
     className?: string;
+    /** Optional simple string to display when selected (instead of full label) */
+    displayValue?: string;
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
@@ -23,7 +25,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
     value,
     onChange,
     placeholder = 'Select...',
-    className = ''
+    className = '',
+    displayValue
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -113,7 +116,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 type="button"
             >
                 <span className="truncate">
-                    {selectedOption ? selectedOption.label : placeholder}
+                    {selectedOption ? (displayValue || selectedOption.label) : placeholder}
                 </span>
                 <ChevronDown size={14} className={`text-text-muted transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
