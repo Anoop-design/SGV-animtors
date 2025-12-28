@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Download, Moon, Sun, Copy, FileDown, Code, HelpCircle, Menu, Sliders } from 'lucide-react';
+import { AnimatedLogo } from '@/components/icons/AnimatedLogo';
 import '@/styles.css';
 import { ExportType } from '@/lib/generate-export';
 
@@ -74,7 +75,7 @@ interface HeaderProps {
  * Header Component
  * 
  * The top navigation bar containing:
- * - Logo with image and text
+ * - Animated logo with wiggle on hover
  * - Theme toggle button
  * - Export buttons (icon-only and dropdown)
  * 
@@ -110,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="header">
-      {/* Logo Section */}
+      {/* Logo Section - Animated logo only, no text */}
       <div className="header-logo">
         {/* Mobile: Left panel toggle */}
         <button
@@ -121,16 +122,8 @@ export const Header: React.FC<HeaderProps> = ({
           <Menu size={20} />
         </button>
 
-        {/* Logo Image - Replace /logo.png with your own logo */}
-        <div className="header-logo-image">
-          <img src="/logo.png" alt="SVG Animator" />
-        </div>
-
-        {/* Logo Text */}
-        <div className="header-logo-text">
-          <span className="header-title">SVG animator</span>
-          <span className="header-subtitle">By Framerlists</span>
-        </div>
+        {/* Animated Logo - Wiggles on hover, uses currentColor for theme support */}
+        <AnimatedLogo size={85} duration={500} />
       </div>
 
       {/* Export Buttons */}

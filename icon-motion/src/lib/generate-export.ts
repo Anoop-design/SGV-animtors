@@ -235,6 +235,10 @@ export default AnimatedIcon;`;
   }
 
   if (type === 'framer-motion') {
+    // NOTE: This basic framer-motion export always uses draw animation
+    // For preset-aware export (wiggle, pop, bounce, etc.), use the 'react-pro' format
+    // which uses generateProExport and respects the recipe.preset
+
     const isInteractive = settings.trigger && settings.trigger !== 'auto';
 
     // Variants generation
@@ -293,6 +297,10 @@ export default AnimatedIcon;`;
       whileTap="${settings.trigger === 'click' ? 'active' : undefined}"` : '';
 
     return `import { motion } from 'framer-motion';
+
+// NOTE: This is a basic draw animation export.
+// For the full preset animation (wiggle, pop, bounce, etc.),
+// use the "React + Framer Motion" export option instead.
 
 const AnimatedIcon = () => {
   return (

@@ -185,9 +185,10 @@
    ============================================================================= */
 
 .header {
-    height: 59px;
-    padding: 12px;
+    height: 60px;
+    padding: 16px;
     display: flex;
+    padding-left: 20px;
     align-items: center;
     justify-content: space-between;
     background-color: var(--bg-card);
@@ -199,6 +200,8 @@
     display: flex;
     align-items: center;
     gap: 7px;
+    color: var(--text-secondary);
+    /* Provides currentColor for SVG */
 }
 
 /* Logo image wrapper */
@@ -2784,7 +2787,7 @@
     background-color: var(--bg-input);
     border: 1px solid var(--border-default);
     border-radius: 10px;
-    
+
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 150ms ease;

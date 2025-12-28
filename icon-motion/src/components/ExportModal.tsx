@@ -128,13 +128,15 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     };
     const normalizedEasing = getValidEasing();
 
+
     // Generate export code based on selected format
     const exportCode = React.useMemo(() => {
         switch (selectedFormat) {
             case 'react-pro':
                 return generateProExport(parsedSVG, settings, recipe, 'AnimatedIcon');
             case 'framer-motion':
-                return generateExport(parsedSVG, settings, 'framer-motion');
+                // Also use generateProExport to ensure presets (wiggle, pop, etc.) are respected
+                return generateProExport(parsedSVG, settings, recipe, 'AnimatedIcon');
             case 'css':
                 return generateExport(parsedSVG, settings, 'css');
             case 'svg':
@@ -316,26 +318,43 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                                             }}
                                             style={{ transformOrigin: 'center' }}
                                         >
-                                            {visiblePaths.map((path, index) => (
-                                                <motion.path
-                                                    key={index}
-                                                    d={path.d}
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth={2}
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    initial={recipe.layerMode === 'individual' ? variants.initial : undefined}
-                                                    animate={isAnimating && recipe.layerMode === 'individual' ? variants.animate : undefined}
-                                                    transition={{
-                                                        duration: duration,
-                                                        delay: index * recipe.stagger,
-                                                        ease: normalizedEasing,
-                                                        repeat: isContinuous && recipe.loop ? Infinity : 0,
-                                                    }}
-                                                    style={{ transformOrigin: 'center', transformBox: 'fill-box' }}
-                                                />
-                                            ))}
+                                            {visiblePaths.map((path, index) => {
+                                                // Match Preview.tsx logic for stroke color and width
+                                                const strokeColor = settings.overrideColor
+                                                    ? settings.strokeColor
+                                                    : (path.originalStroke || 'currentColor');
+                                                const strokeWidth = settings.overrideColor
+                                                    ? settings.strokeWidth
+                                                    : (parseFloat(path.originalStrokeWidth || '2') || 2);
+
+                                                // Calculate fill - match Preview.tsx logic
+                                                let fill = path.originalFill || 'none';
+                                                if (settings.forceStroke || settings.fillMode === 'none') {
+                                                    fill = 'none';
+                                                }
+
+                                                return (
+                                                    <motion.path
+                                                        key={index}
+                                                        d={path.d}
+                                                        transform={path.transform || undefined}
+                                                        fill={fill}
+                                                        stroke={strokeColor}
+                                                        strokeWidth={strokeWidth}
+                                                        strokeLinecap={settings.lineCap}
+                                                        strokeLinejoin={settings.lineJoin}
+                                                        initial={recipe.layerMode === 'individual' ? variants.initial : undefined}
+                                                        animate={isAnimating && recipe.layerMode === 'individual' ? variants.animate : undefined}
+                                                        transition={{
+                                                            duration: duration,
+                                                            delay: index * recipe.stagger,
+                                                            ease: normalizedEasing,
+                                                            repeat: isContinuous && recipe.loop ? Infinity : 0,
+                                                        }}
+                                                        style={{ transformOrigin: 'center', transformBox: 'fill-box' }}
+                                                    />
+                                                );
+                                            })}
                                         </motion.svg>
                                     )}
                                 </div>
