@@ -1,11 +1,14 @@
 'use client';
 
-import React, { forwardRef, useRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useRef, useImperativeHandle, useState } from 'react';
+import { motion } from 'framer-motion';
 import { UploadZone, UploadZoneHandle } from '@/components/ui/UploadZone';
 import { Slider } from '@/components/ui/Slider';
 import { NumberInput } from '@/components/ui/NumberInput';
-import { AlertTriangle, Heart, Layers, Bell, AlertCircle, Shield, Zap, Loader, X, PanelRight, Star } from 'lucide-react';
-import { PresetType, TriggerType } from '@/types';
+import { Dropdown } from '@/components/ui/Dropdown';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { AlertTriangle, Heart, Layers, Bell, AlertCircle, Shield, Zap, Loader, X, PanelRight, Star, ChevronDown, GripVertical, Eye, EyeOff } from 'lucide-react';
+import { PresetType, TriggerType, ParsedPath, AnimationSettings } from '@/types';
 import '@/styles.css';
 
 interface AddSVGPanelProps {
@@ -15,6 +18,15 @@ interface AddSVGPanelProps {
     // Preview size control
     previewSize: number;
     setPreviewSize: (size: number) => void;
+    // Layers props
+    paths: ParsedPath[];
+    onToggleVisibility: (index: number) => void;
+    onReorderPath: (fromIndex: number, toIndex: number) => void;
+    hoveredPathIndex: number | null;
+    setHoveredPathIndex: (index: number | null) => void;
+    // Appearance props
+    settings: AnimationSettings;
+    updateSetting: <K extends keyof AnimationSettings>(key: K, value: AnimationSettings[K]) => void;
     // Responsive props
     isOpen?: boolean;
     onClose?: () => void;
@@ -114,12 +126,7 @@ const QUICK_START_ITEMS: QuickStartItem[] = [
 /**
  * AddSVGPanel Component
  * 
- * Left panel for SVG upload and Quick Start animated examples.
- * 
- * CSS Classes:
- * - .add-svg-panel: Main container
- * - .add-svg-header: Header with title
- * - .add-svg-content: Content area
+ * Left panel for SVG upload, Quick Start, Layers, and Appearance controls.
  */
 export const AddSVGPanel = forwardRef<AddSVGPanelHandle, AddSVGPanelProps>(({
     svgInput,
@@ -127,11 +134,26 @@ export const AddSVGPanel = forwardRef<AddSVGPanelHandle, AddSVGPanelProps>(({
     warnings,
     previewSize,
     setPreviewSize,
+    paths,
+    onToggleVisibility,
+    onReorderPath,
+    hoveredPathIndex,
+    setHoveredPathIndex,
+    settings,
+    updateSetting,
     isOpen,
     onClose,
     onQuickStart
 }, ref) => {
     const uploadRef = useRef<UploadZoneHandle>(null);
+
+    // Collapsible state
+    const [layersOpen, setLayersOpen] = useState(false);
+    const [appearanceOpen, setAppearanceOpen] = useState(true); // Open by default
+
+    // Drag state for layers
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     // Expose triggerUpload for keyboard shortcuts
     useImperativeHandle(ref, () => ({
@@ -142,7 +164,6 @@ export const AddSVGPanel = forwardRef<AddSVGPanelHandle, AddSVGPanelProps>(({
         if (onQuickStart) {
             onQuickStart(item.svg, item.preset, item.trigger);
         } else {
-            // Fallback: just set the SVG
             setSvgInput(item.svg);
         }
     };
@@ -152,7 +173,6 @@ export const AddSVGPanel = forwardRef<AddSVGPanelHandle, AddSVGPanelProps>(({
             {/* Header */}
             <div className="add-svg-header">
                 <span className="add-svg-header-title">Add SVG</span>
-                {/* Mobile close button */}
                 <button className="panel-close-btn" onClick={onClose}>
                     <X size={18} />
                 </button>
@@ -196,28 +216,155 @@ export const AddSVGPanel = forwardRef<AddSVGPanelHandle, AddSVGPanelProps>(({
                     />
                 </div>
 
-                {/* Preview Size Control - same styling as TransformPanel's Stagger */}
-                <div className="add-svg-section">
-                    <span className="add-svg-section-title">Size</span>
-                    <div className="controls-field" style={{ marginTop: '8px' }}>
-                        <div className="controls-field-input-group">
-                            <NumberInput
-                                value={previewSize}
-                                onChange={setPreviewSize}
-                                min={16}
-                                max={512}
-                                step={8}
-                                unit="px"
-                            />
-                            <Slider
-                                min={16}
-                                max={512}
-                                step={8}
-                                value={previewSize}
-                                onChange={setPreviewSize}
+                {/* Layers Section - Collapsible (closed by default) */}
+                <div className="controls-section">
+                    <button
+                        className="controls-section-header"
+                        onClick={() => setLayersOpen(!layersOpen)}
+                    >
+                        <span className="controls-section-title">Layers</span>
+                        <ChevronDown size={16} className={`section-chevron ${layersOpen ? 'open' : ''}`} />
+                    </button>
+                    <motion.div
+                        className="collapsible-content"
+                        initial={false}
+                        animate={{
+                            height: layersOpen ? 'auto' : 0,
+                            opacity: layersOpen ? 1 : 0,
+                            marginTop: layersOpen ? 6 : 0,
+                        }}
+                        transition={{
+                            height: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
+                            opacity: { duration: 0.15, ease: 'easeOut' },
+                            marginTop: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
+                        }}
+                    >
+                        {paths.length > 0 ? (
+                            <div className="layers-list">
+                                {paths.map((path, index) => (
+                                    <div
+                                        key={path.id}
+                                        draggable
+                                        onDragStart={() => setDraggedIndex(index)}
+                                        onDragEnd={() => { setDraggedIndex(null); setDragOverIndex(null); }}
+                                        onDragOver={(e) => { e.preventDefault(); if (draggedIndex !== null && draggedIndex !== index) setDragOverIndex(index); }}
+                                        onDragLeave={() => setDragOverIndex(null)}
+                                        onDrop={(e) => { e.preventDefault(); if (draggedIndex !== null && draggedIndex !== index) onReorderPath(draggedIndex, index); setDraggedIndex(null); setDragOverIndex(null); }}
+                                        className={`layer-item ${hoveredPathIndex === index ? 'hovered' : ''} ${draggedIndex === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
+                                        onMouseEnter={() => setHoveredPathIndex(index)}
+                                        onMouseLeave={() => setHoveredPathIndex(null)}
+                                    >
+                                        <div className="layer-drag-handle"><GripVertical size={14} /></div>
+                                        <span className="layer-name truncate">Path {index + 1}</span>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onToggleVisibility(index); }}
+                                            className={`layer-visibility-btn ${path.visible ? '' : 'hidden-layer'}`}
+                                        >
+                                            {path.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="controls-empty-message">Upload an SVG to see layers</p>
+                        )}
+                    </motion.div>
+                </div>
+
+                {/* Appearance Section - Collapsible (open by default) */}
+                <div className="controls-section">
+                    <button
+                        className="controls-section-header"
+                        onClick={() => setAppearanceOpen(!appearanceOpen)}
+                    >
+                        <span className="controls-section-title">Appearance</span>
+                        <ChevronDown size={16} className={`section-chevron ${appearanceOpen ? 'open' : ''}`} />
+                    </button>
+                    <motion.div
+                        className="collapsible-content collapsible-content-appearance"
+                        initial={false}
+                        animate={{
+                            height: appearanceOpen ? 'auto' : 0,
+                            opacity: appearanceOpen ? 1 : 0,
+                            marginTop: appearanceOpen ? 12 : 0,
+                        }}
+                        transition={{
+                            height: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
+                            opacity: { duration: 0.15, ease: 'easeOut' },
+                            marginTop: { duration: 0.2, ease: [0.4, 0, 0.2, 1] },
+                        }}
+                    >
+                        {/* Size Control */}
+                        <div className="controls-field">
+                            <span className="controls-field-label">Size</span>
+                            <div className="controls-field-input-group">
+                                <NumberInput
+                                    value={previewSize}
+                                    onChange={setPreviewSize}
+                                    min={16}
+                                    max={512}
+                                    step={8}
+                                    unit="px"
+                                />
+                                <Slider
+                                    min={16}
+                                    max={512}
+                                    step={8}
+                                    value={previewSize}
+                                    onChange={setPreviewSize}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Override Toggle */}
+                        <div className="controls-field">
+                            <span className="controls-field-label">Override</span>
+                            <SegmentedControl
+                                options={[{ label: 'Yes', value: 'yes' }, { label: 'No', value: 'no' }]}
+                                value={settings.overrideColor ? 'yes' : 'no'}
+                                onChange={(v) => updateSetting('overrideColor', v === 'yes')}
+                                className="controls-toggle-wide"
                             />
                         </div>
-                    </div>
+
+                        {/* Stroke Color */}
+                        {settings.overrideColor && (
+                            <div className="controls-field">
+                                <span className="controls-field-label">Stroke color</span>
+                                <div className="controls-color-input-inline">
+                                    <input type="color" className="controls-color-picker-inline" value={settings.strokeColor} onChange={(e) => updateSetting('strokeColor', e.target.value)} />
+                                    <input type="text" className="controls-color-text-inline" value={settings.strokeColor.toUpperCase()} onChange={(e) => updateSetting('strokeColor', e.target.value)} />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Stroke Width */}
+                        {settings.overrideColor && (
+                            <div className="controls-field">
+                                <span className="controls-field-label">Stroke width</span>
+                                <div className="controls-field-input-group">
+                                    <input type="text" className="controls-field-input controls-field-input-short" value={settings.strokeWidth} onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) updateSetting('strokeWidth', val); }} />
+                                    <Slider min={0.5} max={10} step={0.5} value={settings.strokeWidth} onChange={(val) => updateSetting('strokeWidth', val)} />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Line Cap */}
+                        <div className="controls-field">
+                            <span className="controls-field-label">Line cap</span>
+                            <div style={{ flex: 1 }}>
+                                <Dropdown options={[{ label: 'Round', value: 'round' }, { label: 'Butt', value: 'butt' }, { label: 'Square', value: 'square' }]} value={settings.lineCap} onChange={(val) => updateSetting('lineCap', val as 'round' | 'butt' | 'square')} />
+                            </div>
+                        </div>
+
+                        {/* Line Join */}
+                        <div className="controls-field">
+                            <span className="controls-field-label">Line join</span>
+                            <div style={{ flex: 1 }}>
+                                <Dropdown options={[{ label: 'Round', value: 'round' }, { label: 'Bevel', value: 'bevel' }, { label: 'Miter', value: 'miter' }]} value={settings.lineJoin} onChange={(val) => updateSetting('lineJoin', val as 'round' | 'bevel' | 'miter')} />
+                            </div>
+                        </div>
+                    </motion.div>
                 </div>
 
                 {/* Warnings display */}

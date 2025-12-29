@@ -427,15 +427,20 @@ export default function IconMotionEditor() {
           onClose={() => setLeftPanelOpen(false)}
           previewSize={previewSize}
           setPreviewSize={setPreviewSize}
+          paths={parsedSVG.paths}
+          onToggleVisibility={togglePathVisibility}
+          onReorderPath={reorderPaths}
+          hoveredPathIndex={hoveredPathIndex}
+          setHoveredPathIndex={setHoveredPathIndex}
+          settings={settings}
+          updateSetting={updateSetting}
           onQuickStart={(svg, preset, trigger) => {
             setSvgInput(svg);
             updateRecipe('preset', preset);
             updateRecipe('trigger', trigger);
-            // Draw presets need individual mode (pathLength per path)
             if (preset === 'draw' || preset === 'draw-pop') {
               updateRecipe('layerMode', 'individual');
             }
-            // Spin/pulse look better with unified mode (whole icon animates together)
             if (preset === 'spin' || preset === 'pulse') {
               updateRecipe('layerMode', 'unified');
             }
@@ -458,21 +463,12 @@ export default function IconMotionEditor() {
           previewSize={previewSize}
         />
 
-        {/* Right Panel - Transform Controls */}
+        {/* Right Panel - Animation Controls */}
         <TransformPanel
           settings={settings}
           updateSetting={updateSetting}
           recipe={recipe}
           updateRecipe={updateRecipe}
-          paths={parsedSVG.paths}
-          onToggleVisibility={togglePathVisibility}
-          onReorderPath={reorderPaths}
-          hoveredPathIndex={hoveredPathIndex}
-          setHoveredPathIndex={setHoveredPathIndex}
-          selectedPathIndex={selectedPathIndex}
-          onSelectPath={setSelectedPathIndex}
-          updatePathAnimation={updatePathAnimation}
-          viewBox={parsedSVG.viewBox}
           isOpen={rightPanelOpen}
           onClose={() => setRightPanelOpen(false)}
         />
