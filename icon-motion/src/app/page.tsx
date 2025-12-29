@@ -52,6 +52,9 @@ export default function IconMotionEditor() {
   const [leftPanelOpen, setLeftPanelOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
 
+  // Preview size state (controlled from AddSVGPanel)
+  const [previewSize, setPreviewSize] = useState(96);
+
 
   // Animation mode is now always 'transform' (stroke tab removed)
 
@@ -422,6 +425,8 @@ export default function IconMotionEditor() {
           warnings={parsedSVG.warnings}
           isOpen={leftPanelOpen}
           onClose={() => setLeftPanelOpen(false)}
+          previewSize={previewSize}
+          setPreviewSize={setPreviewSize}
           onQuickStart={(svg, preset, trigger) => {
             setSvgInput(svg);
             updateRecipe('preset', preset);
@@ -450,6 +455,7 @@ export default function IconMotionEditor() {
           onHoverPath={setHoveredPathIndex}
           recipe={recipe}
           updateRecipe={updateRecipe}
+          previewSize={previewSize}
         />
 
         {/* Right Panel - Transform Controls */}

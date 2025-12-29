@@ -2,6 +2,8 @@
 
 import React, { forwardRef, useRef, useImperativeHandle } from 'react';
 import { UploadZone, UploadZoneHandle } from '@/components/ui/UploadZone';
+import { Slider } from '@/components/ui/Slider';
+import { NumberInput } from '@/components/ui/NumberInput';
 import { AlertTriangle, Heart, Layers, Bell, AlertCircle, Shield, Zap, Loader, X, PanelRight, Star } from 'lucide-react';
 import { PresetType, TriggerType } from '@/types';
 import '@/styles.css';
@@ -10,6 +12,9 @@ interface AddSVGPanelProps {
     svgInput: string;
     setSvgInput: (value: string) => void;
     warnings: string[];
+    // Preview size control
+    previewSize: number;
+    setPreviewSize: (size: number) => void;
     // Responsive props
     isOpen?: boolean;
     onClose?: () => void;
@@ -120,6 +125,8 @@ export const AddSVGPanel = forwardRef<AddSVGPanelHandle, AddSVGPanelProps>(({
     svgInput,
     setSvgInput,
     warnings,
+    previewSize,
+    setPreviewSize,
     isOpen,
     onClose,
     onQuickStart
@@ -187,6 +194,30 @@ export const AddSVGPanel = forwardRef<AddSVGPanelHandle, AddSVGPanelProps>(({
                         placeholder="Paste SVG code here..."
                         className="add-svg-code-textarea hide-scrollbar"
                     />
+                </div>
+
+                {/* Preview Size Control - same styling as TransformPanel's Stagger */}
+                <div className="add-svg-section">
+                    <span className="add-svg-section-title">Size</span>
+                    <div className="controls-field" style={{ marginTop: '8px' }}>
+                        <div className="controls-field-input-group">
+                            <NumberInput
+                                value={previewSize}
+                                onChange={setPreviewSize}
+                                min={16}
+                                max={512}
+                                step={8}
+                                unit="px"
+                            />
+                            <Slider
+                                min={16}
+                                max={512}
+                                step={8}
+                                value={previewSize}
+                                onChange={setPreviewSize}
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 {/* Warnings display */}

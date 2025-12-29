@@ -450,6 +450,8 @@ interface PreviewProps {
   // AnimationRecipe - the current animation configuration
   recipe: AnimationRecipe;
   updateRecipe: <K extends keyof AnimationRecipe>(key: K, value: AnimationRecipe[K]) => void;
+  // Optional external preview size control
+  previewSize?: number;
 }
 
 export interface PreviewHandle {
@@ -482,7 +484,8 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
   onSelectPath,
   onHoverPath,
   recipe,
-  updateRecipe
+  updateRecipe,
+  previewSize: externalSize
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -492,7 +495,9 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
   const [isMorphExpanded, setIsMorphExpanded] = useState(false); // For panel morph animation
 
   // New: Selected size for the size strip (larger default)
-  const [selectedSize, setSelectedSize] = useState(96);
+  // Use external size if provided, otherwise use internal state
+  const [internalSize, setInternalSize] = useState(96);
+  const selectedSize = externalSize ?? internalSize;
 
   // Background state
   const [bgType, setBgType] = useState<BackgroundType>('dotted');
@@ -821,11 +826,11 @@ export const Preview = forwardRef<PreviewHandle, PreviewProps>(({
               <motion.svg
                 key={recipe.layerMode === 'unified' ? animationKey : undefined}
                 viewBox={parsedSVG.viewBox}
+                width={selectedSize}
+                height={selectedSize}
                 className="preview-svg"
                 style={{
                   ...styles,
-                  width: `${selectedSize}px`,
-                  height: `${selectedSize}px`,
                   overflow: 'visible', // Allow transforms to go outside
                   cursor: recipe.trigger !== 'auto' ? 'pointer' : 'default',
                   transformOrigin: 'center',
