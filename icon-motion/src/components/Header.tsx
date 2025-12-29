@@ -123,7 +123,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         {/* Animated Logo - Wiggles on hover, uses currentColor for theme support */}
-        <AnimatedLogo size={85} duration={500} />
+        <AnimatedLogo size={70} duration={500} />
       </div>
 
       {/* Export Buttons */}
