@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import "@/styles.css";
 
@@ -63,6 +64,7 @@ export default function RootLayout({
         style={{ fontFamily: "'Inter', sans-serif" }}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );
